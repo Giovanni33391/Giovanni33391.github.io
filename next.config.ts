@@ -5,7 +5,6 @@ const withPWA = withPWAInit({
   dest: "public",
   disable: process.env.NODE_ENV === "development",
   register: true,
-  skipWaiting: true,
 });
 
 /** @type {import('next').NextConfig} */
@@ -38,9 +37,8 @@ export default withSentryConfig(pwaConfig, {
     enabled: true,
   },
 
-  // Hides source maps from generated client bundles
-  hideSourceMaps: true,
-
   // Automatically tree-shake Sentry logger statements to reduce bundle size
-  disableLogger: true,
+  sourcemaps: {
+    disable: true,
+  },
 });
