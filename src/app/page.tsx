@@ -29,10 +29,28 @@ export default function Home() {
   const [isProModalOpen, setIsProModalOpen] = useState(false);
   
   const MAX_FREE_CHALLENGES = 3;
+  const MAX_FREE_QUALITATIVE = 1;
 
-  const handleCreateChallenge = (name: string, initialMetric: number, unit: string) => {
-    addChallenge(name, initialMetric, unit);
-    posthog.capture('challenge_created', { name, unit });
+  const handleCreateChallenge = (
+    type: 'quantitative' | 'qualitative',
+    name: string,
+    initialMetric: number,
+    unit: string,
+    goalDescription: string,
+    initialTasks: { id: string; task: string }[]
+  ) => {
+    if (type === 'qualitative') {
+       const qualCount = challenges.filter(c => c.type === 'qualitative').length;
+       if (qualCount >= MAX_FREE_QUALITATIVE) {
+         posthog.capture('ai_pro_intent_click');
+         setIsModalOpen(false);
+         setIsProModalOpen(true);
+         return;
+       }
+    }
+
+    addChallenge(type, name, initialMetric, unit, goalDescription, initialTasks);
+    posthog.capture('challenge_created', { type, name, unit });
     setIsModalOpen(false);
   };
   

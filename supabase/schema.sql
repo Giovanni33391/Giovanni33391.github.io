@@ -15,11 +15,20 @@ create table public.users (
 create table public.challenges (
   id uuid default uuid_generate_v4() primary key,
   user_id uuid references public.users(id) on delete cascade not null,
+  type text default 'quantitative' not null,
   name text not null,
-  initial_metric numeric not null,
-  unit text not null,
+  
+  -- Quantitative
+  initial_metric numeric default 0,
+  unit text default '',
+  current_metric numeric default 0,
+  
+  -- Qualitative
+  goal_description text,
+  task_queue jsonb default '[]'::jsonb,
+  completed_tasks jsonb default '[]'::jsonb,
+  
   streak integer default 0 not null,
-  current_metric numeric not null,
   last_completed_date timestamp with time zone,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
@@ -30,7 +39,8 @@ create table public.challenge_logs (
   id uuid default uuid_generate_v4() primary key,
   challenge_id uuid references public.challenges(id) on delete cascade not null,
   user_id uuid references public.users(id) on delete cascade not null,
-  metric_achieved numeric not null,
+  metric_achieved numeric,
+  task_completed text,
   completed_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 

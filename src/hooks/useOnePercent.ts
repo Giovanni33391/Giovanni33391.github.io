@@ -8,9 +8,11 @@ const STORAGE_KEY = 'onepercent_challenges';
 const PENDING_SYNC_KEY = 'onepercent_pending_sync';
 
 // Define a type for pending sync actions instead of using any
+import type { QualitativeTask } from '@/types';
+
 type PendingAction = 
   | { type: 'INSERT'; data: Challenge }
-  | { type: 'UPDATE'; data: { id: string; streak: number; currentMetric: number; lastCompletedDate: string } }
+  | { type: 'UPDATE'; data: { id: string; streak: number; currentMetric: number; lastCompletedDate: string; taskQueue?: QualitativeTask[]; completedTasks?: string[] } }
   | { type: 'DELETE'; data: { id: string } };
 
 // Helper to check if a date string is today
@@ -112,20 +114,28 @@ export function useOnePercent() {
           const { error } = await supabase.from('challenges').upsert({
             id: action.data.id,
             user_id: currentUser.id,
+            type: action.data.type,
             name: action.data.name,
             initial_metric: action.data.initialMetric,
             current_metric: action.data.currentMetric,
             unit: action.data.unit,
+            goal_description: action.data.goalDescription,
+            task_queue: action.data.taskQueue,
+            completed_tasks: action.data.completedTasks,
             streak: action.data.streak,
             last_completed_date: action.data.lastCompletedDate,
           });
           if (error) remainingActions.push(action);
         } else if (action.type === 'UPDATE') {
-           const { error } = await supabase.from('challenges').update({
+           const updatePayload: Record<string, unknown> = {
              streak: action.data.streak,
              current_metric: action.data.currentMetric,
              last_completed_date: action.data.lastCompletedDate
-           }).eq('id', action.data.id);
+           };
+           if (action.data.taskQueue) updatePayload.task_queue = action.data.taskQueue;
+           if (action.data.completedTasks) updatePayload.completed_tasks = action.data.completedTasks;
+
+           const { error } = await supabase.from('challenges').update(updatePayload).eq('id', action.data.id);
 
            if (!error) {
               await supabase.from('challenge_logs').insert({
@@ -180,10 +190,14 @@ export function useOnePercent() {
 
             const cloudMapped: Challenge = {
               id: dbChallenge.id,
+              type: dbChallenge.type || 'quantitative',
               name: dbChallenge.name,
-              initialMetric: dbChallenge.initial_metric,
-              currentMetric: dbChallenge.current_metric,
-              unit: dbChallenge.unit,
+              initialMetric: dbChallenge.initial_metric || 0,
+              currentMetric: dbChallenge.current_metric || 0,
+              unit: dbChallenge.unit || '',
+              goalDescription: dbChallenge.goal_description,
+              taskQueue: dbChallenge.task_queue,
+              completedTasks: dbChallenge.completed_tasks,
               streak: dbChallenge.streak,
               startDate: dbChallenge.created_at,
               lastCompletedDate: dbChallenge.last_completed_date,
@@ -243,13 +257,24 @@ export function useOnePercent() {
   };
 
   // Actions
-  const addChallenge = useCallback(async (name: string, initialMetric: number, unit: string) => {
+  const addChallenge = useCallback(async (
+    type: 'quantitative' | 'qualitative',
+    name: string, 
+    initialMetric: number = 0, 
+    unit: string = '', 
+    goalDescription: string = '',
+    initialTasks: QualitativeTask[] = []
+  ) => {
     const newChallenge: Challenge = {
       id: crypto.randomUUID(),
+      type,
       name,
       initialMetric,
       currentMetric: initialMetric,
       unit,
+      goalDescription: type === 'qualitative' ? goalDescription : undefined,
+      taskQueue: type === 'qualitative' ? initialTasks : undefined,
+      completedTasks: type === 'qualitative' ? [] : undefined,
       streak: 0,
       startDate: new Date().toISOString(),
       lastCompletedDate: null,
@@ -259,19 +284,27 @@ export function useOnePercent() {
     setChallenges(prev => [...prev, newChallenge]);
 
     if (user) {
-      const { data, error } = await supabase.from('challenges').insert({
+      const insertPayload: Record<string, unknown> = {
         id: newChallenge.id,
         user_id: user.id,
+        type: newChallenge.type,
         name: newChallenge.name,
         initial_metric: newChallenge.initialMetric,
         current_metric: newChallenge.currentMetric,
         unit: newChallenge.unit,
         streak: newChallenge.streak,
         last_completed_date: newChallenge.lastCompletedDate,
-      }).select().single();
+      };
+
+      if (type === 'qualitative') {
+        insertPayload.goal_description = newChallenge.goalDescription;
+        insertPayload.task_queue = newChallenge.taskQueue;
+        insertPayload.completed_tasks = newChallenge.completedTasks;
+      }
+
+      const { data, error } = await supabase.from('challenges').insert(insertPayload).select().single();
 
       if (error) {
-        // Failed network -> queue for offline sync
         addPendingSync({ type: 'INSERT', data: newChallenge });
       } else if (data) {
         setChallenges(prev => prev.map(c => c.id === newChallenge.id ? { ...c, createdAt: data.created_at } : c));
@@ -284,8 +317,50 @@ export function useOnePercent() {
     if (!challengeToUpdate || isToday(challengeToUpdate.lastCompletedDate)) return;
 
     const newStreak = isYesterday(challengeToUpdate.lastCompletedDate) ? challengeToUpdate.streak + 1 : 1;
-    const nextMetric = calculateCompoundedMetric(challengeToUpdate.initialMetric, newStreak);
     const now = new Date().toISOString();
+
+    let nextMetric = challengeToUpdate.currentMetric;
+    let completedTaskString = '';
+    let updatedTaskQueue = challengeToUpdate.taskQueue;
+    let updatedCompletedTasks = challengeToUpdate.completedTasks;
+
+    if (challengeToUpdate.type === 'quantitative') {
+      nextMetric = calculateCompoundedMetric(challengeToUpdate.initialMetric, newStreak);
+    } else if (challengeToUpdate.type === 'qualitative') {
+      // Dequeue the first task
+      const currentTask = challengeToUpdate.taskQueue?.[0];
+      if (currentTask) {
+        completedTaskString = currentTask.task;
+        updatedTaskQueue = challengeToUpdate.taskQueue?.slice(1) || [];
+        updatedCompletedTasks = [...(challengeToUpdate.completedTasks || []), currentTask.task];
+      }
+
+      // Check if we need to silently refill the queue (when dropping to 2 items or less)
+      if (updatedTaskQueue && updatedTaskQueue.length <= 2) {
+        // Trigger background fetch, don't await
+        fetch('/api/generate-micro-tasks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            goal: challengeToUpdate.goalDescription, 
+            completedTasks: updatedCompletedTasks 
+          })
+        }).then(res => res.json()).then(data => {
+          if (data.tasks) {
+            setChallenges(prev => prev.map(c => {
+               if (c.id === id) {
+                 return { ...c, taskQueue: [...(c.taskQueue || []), ...data.tasks] };
+               }
+               return c;
+            }));
+            // If user is online, update cloud queue silently
+            if (user) {
+               supabase.from('challenges').update({ task_queue: [...(updatedTaskQueue || []), ...data.tasks] }).eq('id', id);
+            }
+          }
+        }).catch(err => console.error("Silent refill failed", err));
+      }
+    }
 
     setChallenges(prev => 
       prev.map(challenge => {
@@ -295,36 +370,50 @@ export function useOnePercent() {
           streak: newStreak,
           currentMetric: nextMetric,
           lastCompletedDate: now,
+          taskQueue: updatedTaskQueue,
+          completedTasks: updatedCompletedTasks,
         };
       })
     );
 
     if (user) {
-      const updateData = {
+      const updateData: { id: string; streak: number; currentMetric: number; lastCompletedDate: string; taskQueue?: QualitativeTask[]; completedTasks?: string[] } = {
         id,
         streak: newStreak,
         currentMetric: nextMetric,
         lastCompletedDate: now
       };
 
+      const dbUpdatePayload: Record<string, unknown> = {
+        streak: newStreak,
+        current_metric: nextMetric,
+        last_completed_date: now
+      };
+
+      if (challengeToUpdate.type === 'qualitative') {
+        updateData.taskQueue = updatedTaskQueue;
+        updateData.completedTasks = updatedCompletedTasks;
+        dbUpdatePayload.task_queue = updatedTaskQueue;
+        dbUpdatePayload.completed_tasks = updatedCompletedTasks;
+      }
+
       const { error: updateError } = await supabase
         .from('challenges')
-        .update({
-          streak: newStreak,
-          current_metric: nextMetric,
-          last_completed_date: now
-        })
+        .update(dbUpdatePayload)
         .eq('id', id);
         
       if (updateError) {
         addPendingSync({ type: 'UPDATE', data: updateData });
       } else {
-        await supabase.from('challenge_logs').insert({
+        const logPayload: Record<string, unknown> = {
           challenge_id: id,
           user_id: user.id,
-          metric_achieved: nextMetric,
           completed_at: now
-        });
+        };
+        if (challengeToUpdate.type === 'quantitative') logPayload.metric_achieved = nextMetric;
+        if (challengeToUpdate.type === 'qualitative') logPayload.task_completed = completedTaskString;
+
+        await supabase.from('challenge_logs').insert(logPayload);
       }
     }
   }, [challenges, user, supabase, addPendingSync]);
