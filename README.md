@@ -35,6 +35,9 @@ Para lanzar OnePercent a producción, utiliza Vercel. Sigue estos pasos:
 - `SENTRY_ORG`: Tu organización en Sentry.
 - `SENTRY_PROJECT`: Tu proyecto en Sentry.
 
+**Inteligencia Artificial (Backend/Edge - ESTRICTAMENTE PRIVADO)**
+- `OPENAI_API_KEY`: Tu clave de API de OpenAI para generar las micro-misiones. **CRUCIAL: Por seguridad, nunca agregues el prefijo `NEXT_PUBLIC_` a esta variable**, de lo contrario expondrías la clave al navegador. El SDK la lee de forma segura desde el backend.
+
 5. Haz clic en **Deploy**. Vercel se encargará de instalar las dependencias, construir el proyecto (incluyendo la inyección de los source maps a Sentry) y desplegarlo.
 
 ## Configuración de Supabase (Base de datos)
