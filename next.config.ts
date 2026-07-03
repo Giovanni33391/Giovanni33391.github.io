@@ -33,13 +33,13 @@ export default withSentryConfig(pwaConfig, {
   widenClientFileUpload: true,
 
   // Automatically annotate React components to show their full name in breadcrumbs and session replay
-  reactComponentAnnotation: {
-    enabled: true,
-  },
+ // reactComponentAnnotation: {
+   // enabled: true,
+  //},
 
   // Hides source maps from generated client bundles
-  hideSourceMaps: true,
+ // hideSourceMaps: true,
 
   // Automatically tree-shake Sentry logger statements to reduce bundle size
-  disableLogger: true,
+ // disableLogger: true,
 });
