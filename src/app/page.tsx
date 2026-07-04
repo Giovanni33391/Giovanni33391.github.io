@@ -10,6 +10,7 @@ import { EmptyState } from '@/components/challenges/EmptyState';
 import { ChallengeCard } from '@/components/challenges/ChallengeCard';
 import { NewChallengeForm } from '@/components/challenges/NewChallengeForm';
 import { ProModal } from '@/components/ui/ProModal';
+import { LandingPage } from '@/components/landing/LandingPage';
 import posthog from 'posthog-js';
 
 export default function Home() {
@@ -51,6 +52,16 @@ export default function Home() {
 
   // Prevent hydration mismatch by returning null until loaded
   if (!isLoaded) return null;
+
+  // Show landing page if user is not logged in AND has no challenges
+  if (!user && challenges.length === 0) {
+    return (
+      <LandingPage
+        onGetStarted={handleOpenNewChallenge}
+        onSignIn={signInWithGoogle}
+      />
+    );
+  }
 
   return (
     <main className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
