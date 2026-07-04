@@ -38,7 +38,13 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
       await signInWithEmail(email);
       setSent(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al enviar el enlace');
+      console.error('Email sign in error:', err);
+      const isNetworkError = err instanceof TypeError && err.message === 'Failed to fetch';
+      setError(
+        isNetworkError
+          ? 'Error de conexión: No se pudo contactar con el servidor. Verifica tu conexión a internet o la configuración de Supabase.'
+          : (err instanceof Error ? err.message : 'Error al enviar el enlace')
+      );
     } finally {
       setLoading(false);
     }
