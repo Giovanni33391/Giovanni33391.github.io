@@ -25,8 +25,10 @@ export function ChallengeCard({ challenge, onComplete, onDelete, isToday }: Chal
   const completedToday = isToday(challenge.lastCompletedDate);
   const isQualitative = challenge.type === 'qualitative';
   
-  const handleComplete = () => {
-    if (completedToday) return;
+  const handleComplete = async () => {
+    if (completedToday || isCompleting) return;
+
+    setIsCompleting(true);
     
     // Trigger confetti
     confetti({
@@ -36,7 +38,11 @@ export function ChallengeCard({ challenge, onComplete, onDelete, isToday }: Chal
       colors: isQualitative ? ['#a855f7', '#8b5cf6', '#7c3aed'] : ['#34d399', '#10b981', '#059669']
     });
     
-    onComplete(challenge.id);
+    try {
+      await onComplete(challenge.id);
+    } finally {
+      setIsCompleting(false);
+    }
   };
 
   // Generate mock chart data projecting 30 days of 1% growth
@@ -126,9 +132,11 @@ export function ChallengeCard({ challenge, onComplete, onDelete, isToday }: Chal
             !completedToday && isQualitative && "bg-purple-600 hover:bg-purple-500 border-none"
           )}
           onClick={handleComplete}
-          disabled={completedToday}
+          disabled={completedToday || isCompleting}
         >
-          {completedToday ? (
+          {isCompleting ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : completedToday ? (
             <span className="flex items-center">
               <CheckCircle2 className="w-5 h-5 mr-2" />
               Completado por hoy

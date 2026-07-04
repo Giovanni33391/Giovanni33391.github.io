@@ -32,9 +32,9 @@ export default function Home() {
   
   const MAX_FREE_CHALLENGES = 3;
 
-  const handleCreateChallenge = (name: string, initialMetric: number, unit: string) => {
-    addChallenge(name, initialMetric, unit);
-    posthog.capture('challenge_created', { name, unit });
+  const handleCreateChallenge = (name: string, initialMetric: number, unit: string, type: 'quantitative' | 'qualitative') => {
+    addChallenge(name, initialMetric, unit, type);
+    posthog.capture('challenge_created', { name, unit, type });
     setIsModalOpen(false);
   };
   
