@@ -14,8 +14,9 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "OnePercent | Mejora un 1% cada día",
-  description: "Un motor de progresión incremental inspirado en la filosofía de Hábitos Atómicos. Mejora un 1% cada día y sé 37 veces mejor en un año.",
+  title: "OnePercent | Mejora un 1% cada día - Hábitos Atómicos",
+  description: "Descubre OnePercent, el motor de progresión incremental inspirado en Hábitos Atómicos. Mejora un 1% cada día y conviértete en un 3700% mejor en un año. Rastreo de hábitos y crecimiento compuesto.",
+  keywords: ["hábitos", "crecimiento personal", "hábitos atómicos", "interés compuesto", "productividad", "mejora continua"],
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
