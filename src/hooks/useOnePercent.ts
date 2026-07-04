@@ -10,7 +10,7 @@ const PENDING_SYNC_KEY = 'onepercent_pending_sync';
 // Define a type for pending sync actions instead of using any
 type PendingAction = 
   | { type: 'INSERT'; data: Challenge }
-  | { type: 'UPDATE'; data: { id: string; streak: number; currentMetric: number; nextTask?: string; lastCompletedDate: string } }
+  | { type: 'UPDATE'; data: { id: string; streak: number; currentMetric: number; lastCompletedDate: string; nextTask?: string } }
   | { type: 'DELETE'; data: { id: string } };
 
 // Helper to check if a date string is today
@@ -69,7 +69,6 @@ export function useOnePercent() {
   const [isSyncing, setIsSyncing] = useState(false);
   
   // Need to memoize supabase client inside useOnePercent to avoid dependency issues
-  // But createClient() returns a new instance each time if we aren't careful, so we use memo
   const [supabase] = useState(() => createClient());
 
   useEffect(() => {
@@ -120,14 +119,15 @@ export function useOnePercent() {
             streak: action.data.streak,
             next_task: action.data.nextTask,
             last_completed_date: action.data.lastCompletedDate,
+            next_task: action.data.nextTask,
           });
           if (error) remainingActions.push(action);
         } else if (action.type === 'UPDATE') {
            const { error } = await supabase.from('challenges').update({
              streak: action.data.streak,
              current_metric: action.data.currentMetric,
+             last_completed_date: action.data.lastCompletedDate,
              next_task: action.data.nextTask,
-             last_completed_date: action.data.lastCompletedDate
            }).eq('id', action.data.id);
 
            if (!error) {
@@ -152,24 +152,19 @@ export function useOnePercent() {
     }
   }, [isSyncing, supabase]);
 
-  // 3. Sync from Cloud if Authenticated (Merge Strategy)
+  // 3. Sync from Cloud if Authenticated
   useEffect(() => {
     if (!user || !isLoaded) return;
 
     const syncWithCloud = async () => {
-      // First, try to push any pending offline updates up to the cloud
       await processPendingSync(user);
 
-      // Then fetch the latest from the cloud
       const { data, error } = await supabase
         .from('challenges')
         .select('*')
         .eq('user_id', user.id);
 
-      if (error) {
-        console.error('Error fetching from Supabase:', error);
-        return;
-      }
+      if (error) return;
 
       if (data) {
         setChallenges(prevLocal => {
@@ -196,14 +191,11 @@ export function useOnePercent() {
             };
 
             if (!localChallenge) {
-              // It's in the cloud but not local (e.g. fresh login)
               mergedChallenges.push(cloudMapped);
             } else if (cloudDate > localDate) {
-              // Cloud is strictly newer, overwrite local
               const index = mergedChallenges.findIndex(c => c.id === dbChallenge.id);
               if (index !== -1) mergedChallenges[index] = cloudMapped;
             }
-            // If localDate >= cloudDate, we keep local. The processPendingSync will eventually push it.
           }
           return mergedChallenges;
         });
@@ -212,22 +204,33 @@ export function useOnePercent() {
 
     syncWithCloud();
 
-    // Set up network listener to retry sync when online
-    const handleOnline = () => {
-      syncWithCloud();
-    };
-    
+    const handleOnline = () => syncWithCloud();
     window.addEventListener('online', handleOnline);
     return () => window.removeEventListener('online', handleOnline);
 
   }, [user, isLoaded, supabase, processPendingSync]);
 
-  // 4. Save to LocalStorage Whenever State Changes
   useEffect(() => {
     if (isLoaded) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(challenges));
     }
   }, [challenges, isLoaded]);
+
+  // AI Task Generation Helper
+  const fetchNextAITask = async (challengeName: string, streak: number, unit: string) => {
+    try {
+      const response = await fetch('/api/ai/generate-task', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ challengeName, streak, unit }),
+      });
+      const data = await response.json();
+      return data.nextTask;
+    } catch (err) {
+      console.error('Failed to fetch AI task:', err);
+      return null;
+    }
+  };
 
   // Auth Methods
   const signInWithGoogle = async () => {
@@ -267,25 +270,10 @@ export function useOnePercent() {
   };
 
   // Actions
-  const generateAITask = async (habitName: string, streak: number) => {
-    try {
-      const res = await fetch('/api/ai/generate-task', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ habitName, streak, type: 'qualitative' }),
-      });
-      const data = await res.json();
-      return data.task as string;
-    } catch (error) {
-      console.error('Failed to generate AI task:', error);
-      return 'Realiza una pequeña mejora hoy.';
-    }
-  };
-
   const addChallenge = useCallback(async (name: string, initialMetric: number, unit: string, type: 'quantitative' | 'qualitative' = 'quantitative') => {
-    let nextTask: string | undefined;
-    if (type === 'qualitative') {
-      nextTask = await generateAITask(name, 0);
+    let nextTask = undefined;
+    if (type === 'qualitative' && user) {
+      nextTask = await fetchNextAITask(name, 0, unit);
     }
 
     const newChallenge: Challenge = {
@@ -316,10 +304,10 @@ export function useOnePercent() {
         streak: newChallenge.streak,
         next_task: newChallenge.nextTask,
         last_completed_date: newChallenge.lastCompletedDate,
+        next_task: newChallenge.nextTask,
       }).select().single();
 
       if (error) {
-        // Failed network -> queue for offline sync
         addPendingSync({ type: 'INSERT', data: newChallenge });
       } else if (data) {
         setChallenges(prev => prev.map(c => c.id === newChallenge.id ? { ...c, createdAt: data.created_at } : c));
@@ -335,9 +323,9 @@ export function useOnePercent() {
     const nextMetric = calculateCompoundedMetric(challengeToUpdate.initialMetric, newStreak);
     const now = new Date().toISOString();
 
-    let nextTask: string | undefined;
-    if (challengeToUpdate.type === 'qualitative') {
-      nextTask = await generateAITask(challengeToUpdate.name, newStreak);
+    let nextTask = challengeToUpdate.nextTask;
+    if (challengeToUpdate.type === 'qualitative' && user) {
+      nextTask = await fetchNextAITask(challengeToUpdate.name, newStreak, challengeToUpdate.unit);
     }
 
     setChallenges(prev => 
@@ -349,6 +337,7 @@ export function useOnePercent() {
           currentMetric: nextMetric,
           nextTask,
           lastCompletedDate: now,
+          nextTask
         };
       })
     );
@@ -358,8 +347,8 @@ export function useOnePercent() {
         id,
         streak: newStreak,
         currentMetric: nextMetric,
-        nextTask,
-        lastCompletedDate: now
+        lastCompletedDate: now,
+        nextTask
       };
 
       const { error: updateError } = await supabase
@@ -367,8 +356,8 @@ export function useOnePercent() {
         .update({
           streak: newStreak,
           current_metric: nextMetric,
-          next_task: nextTask,
-          last_completed_date: now
+          last_completed_date: now,
+          next_task: nextTask
         })
         .eq('id', id);
         

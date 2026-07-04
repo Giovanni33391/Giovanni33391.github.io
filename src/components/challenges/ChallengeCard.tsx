@@ -1,10 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle2, Flame, TrendingUp, Trash2, Sparkles, Loader2 } from 'lucide-react';
+import { CheckCircle2, Flame, TrendingUp, Trash2, Zap, Sparkles } from 'lucide-react';
 import { Area, AreaChart, ResponsiveContainer } from 'recharts';
 import confetti from 'canvas-confetti';
 import { Challenge } from '@/types';
-import { formatMetric, calculateCompoundedMetric } from '@/lib/utils';
+import { formatMetric, calculateCompoundedMetric, cn } from '@/lib/utils';
 import { Button } from '../ui/Button';
 
 interface ChallengeCardProps {
@@ -15,8 +15,15 @@ interface ChallengeCardProps {
 }
 
 export function ChallengeCard({ challenge, onComplete, onDelete, isToday }: ChallengeCardProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(timer);
+  }, []);
+
   const completedToday = isToday(challenge.lastCompletedDate);
-  const [isCompleting, setIsCompleting] = useState(false);
+  const isQualitative = challenge.type === 'qualitative';
   
   const handleComplete = async () => {
     if (completedToday || isCompleting) return;
@@ -28,7 +35,7 @@ export function ChallengeCard({ challenge, onComplete, onDelete, isToday }: Chal
       particleCount: 100,
       spread: 70,
       origin: { y: 0.6 },
-      colors: ['#34d399', '#10b981', '#059669'] // Emerald shades
+      colors: isQualitative ? ['#a855f7', '#8b5cf6', '#7c3aed'] : ['#34d399', '#10b981', '#059669']
     });
     
     try {
@@ -51,6 +58,8 @@ export function ChallengeCard({ challenge, onComplete, onDelete, isToday }: Chal
     return data;
   }, [challenge.initialMetric]);
 
+  if (!mounted) return null;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -58,13 +67,24 @@ export function ChallengeCard({ challenge, onComplete, onDelete, isToday }: Chal
       exit={{ opacity: 0, scale: 0.95 }}
       whileHover={{ y: -4 }}
       transition={{ duration: 0.2 }}
-      className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden group hover:shadow-2xl hover:shadow-emerald-500/5 hover:border-zinc-700 transition-all relative"
+      className={cn(
+        "bg-zinc-900 border rounded-2xl overflow-hidden group hover:shadow-2xl transition-all relative",
+        isQualitative
+          ? "border-purple-500/20 hover:border-purple-500/40 hover:shadow-purple-500/5"
+          : "border-zinc-800 hover:border-zinc-700 hover:shadow-emerald-500/5"
+      )}
     >
       <div className="p-6">
         <div className="flex justify-between items-start mb-6">
           <div>
-            <h3 className="text-xl font-bold text-zinc-100 mb-1">{challenge.name}</h3>
-            <div className="flex items-center text-emerald-400 text-sm font-medium">
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="text-xl font-bold text-zinc-100">{challenge.name}</h3>
+              {isQualitative && <Zap className="w-4 h-4 text-purple-400" />}
+            </div>
+            <div className={cn(
+              "flex items-center text-sm font-medium",
+              isQualitative ? "text-purple-400" : "text-emerald-400"
+            )}>
               <Flame className="w-4 h-4 mr-1.5" />
               Racha: {challenge.streak} {challenge.streak === 1 ? 'día' : 'días'}
             </div>
@@ -80,37 +100,37 @@ export function ChallengeCard({ challenge, onComplete, onDelete, isToday }: Chal
           </Button>
         </div>
 
-        <div className="flex items-end justify-between mb-8">
-          <div className="w-full">
-            <p className="text-sm text-zinc-400 mb-1 flex items-center justify-between">
-              Objetivo de hoy
-              {challenge.type === 'qualitative' && (
-                <span className="flex items-center text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                  <Sparkles className="w-2.5 h-2.5 mr-1" /> IA
-                </span>
-              )}
+        {isQualitative ? (
+          <div className="mb-8 p-4 rounded-xl bg-purple-500/10 border border-purple-500/20 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-2 opacity-20">
+              <Sparkles className="w-8 h-8 text-purple-400" />
+            </div>
+            <p className="text-[10px] uppercase font-bold text-purple-400 tracking-widest mb-2">Próximo paso IA (1%)</p>
+            <p className="text-zinc-100 font-medium leading-relaxed">
+              {challenge.nextTask || 'Generando tu próximo desafío...'}
             </p>
-            {challenge.type === 'qualitative' ? (
-              <div className="mt-2 p-3 bg-zinc-950 border border-zinc-800 rounded-xl">
-                <p className="text-zinc-200 text-sm italic leading-relaxed">
-                  &quot;{challenge.nextTask || 'Calculando tu próximo paso...'}&quot;
-                </p>
-              </div>
-            ) : (
+          </div>
+        ) : (
+          <div className="flex items-end justify-between mb-8">
+            <div>
+              <p className="text-sm text-zinc-400 mb-1">Objetivo de hoy</p>
               <div className="flex items-baseline gap-2">
                 <span className="text-4xl font-black text-zinc-100 tracking-tight">
                   {formatMetric(challenge.currentMetric)}
                 </span>
                 <span className="text-zinc-500 font-medium">{challenge.unit}</span>
               </div>
-            )}
+            </div>
           </div>
-        </div>
+        )}
 
         <Button 
-          variant={completedToday ? "success" : "default"} 
+          variant={completedToday ? "success" : (isQualitative ? "default" : "default")}
           size="lg" 
-          className="w-full relative overflow-hidden"
+          className={cn(
+            "w-full relative overflow-hidden",
+            !completedToday && isQualitative && "bg-purple-600 hover:bg-purple-500 border-none"
+          )}
           onClick={handleComplete}
           disabled={completedToday || isCompleting}
         >
@@ -122,36 +142,37 @@ export function ChallengeCard({ challenge, onComplete, onDelete, isToday }: Chal
               Completado por hoy
             </span>
           ) : (
-            challenge.type === 'qualitative' ? "Tarea completada" : "Completar 1% de hoy"
+            isQualitative ? "¡Hecho!" : "Completar 1% de hoy"
           )}
         </Button>
       </div>
 
-      {/* 30-day projection chart */}
-      <div className="h-24 w-full mt-2 opacity-30 group-hover:opacity-50 transition-opacity">
-        <div className="absolute bottom-24 left-6 flex items-center text-xs font-medium text-emerald-500/80">
-          <TrendingUp className="w-3 h-3 mr-1" />
-          Proyección a 30 días
+      {!isQualitative && (
+        <div className="h-24 w-full mt-2 opacity-30 group-hover:opacity-50 transition-opacity">
+          <div className="absolute bottom-24 left-6 flex items-center text-xs font-medium text-emerald-500/80">
+            <TrendingUp className="w-3 h-3 mr-1" />
+            Proyección a 30 días
+          </div>
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={chartData}>
+              <defs>
+                <linearGradient id={`color-${challenge.id}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <Area
+                type="monotone"
+                dataKey="value"
+                stroke="#10b981"
+                strokeWidth={2}
+                fillOpacity={1}
+                fill={`url(#color-${challenge.id})`}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
         </div>
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData}>
-            <defs>
-              <linearGradient id={`color-${challenge.id}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-              </linearGradient>
-            </defs>
-            <Area 
-              type="monotone" 
-              dataKey="value" 
-              stroke="#10b981" 
-              strokeWidth={2}
-              fillOpacity={1} 
-              fill={`url(#color-${challenge.id})`} 
-            />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
+      )}
     </motion.div>
   );
 }
