@@ -11,6 +11,7 @@ import { ChallengeCard } from '@/components/challenges/ChallengeCard';
 import { NewChallengeForm } from '@/components/challenges/NewChallengeForm';
 import { ProModal } from '@/components/ui/ProModal';
 import { LandingPage } from '@/components/landing/LandingPage';
+import { AuthModal } from '@/components/auth/AuthModal';
 import posthog from 'posthog-js';
 
 export default function Home() {
@@ -18,7 +19,6 @@ export default function Home() {
     challenges, 
     isLoaded, 
     user,
-    signInWithGoogle,
     signOut,
     addChallenge, 
     completeChallenge, 
@@ -28,6 +28,7 @@ export default function Home() {
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isProModalOpen, setIsProModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   
   const MAX_FREE_CHALLENGES = 3;
 
@@ -56,10 +57,16 @@ export default function Home() {
   // Show landing page if user is not logged in AND has no challenges
   if (!user && challenges.length === 0) {
     return (
-      <LandingPage
-        onGetStarted={handleOpenNewChallenge}
-        onSignIn={signInWithGoogle}
-      />
+      <>
+        <LandingPage
+          onGetStarted={() => setIsAuthModalOpen(true)}
+          onSignIn={() => setIsAuthModalOpen(true)}
+        />
+        <AuthModal
+          isOpen={isAuthModalOpen}
+          onClose={() => setIsAuthModalOpen(false)}
+        />
+      </>
     );
   }
 
@@ -100,9 +107,9 @@ export default function Home() {
               </Button>
             </>
           ) : (
-            <Button onClick={signInWithGoogle} variant="default" size="sm">
+            <Button onClick={() => setIsAuthModalOpen(true)} variant="default" size="sm">
               <LogIn className="w-4 h-4 mr-2" />
-              Sincronizar (Google)
+              Sincronizar
             </Button>
           )}
         </div>
@@ -167,6 +174,11 @@ export default function Home() {
       <ProModal 
         isOpen={isProModalOpen} 
         onClose={() => setIsProModalOpen(false)} 
+      />
+
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
       />
     </main>
   );
