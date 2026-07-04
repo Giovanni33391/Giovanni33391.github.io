@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '../ui/Button';
+import { Zap, BarChart3, Info } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface NewChallengeFormProps {
   onSubmit: (name: string, initialMetric: number, unit: string, type: 'quantitative' | 'qualitative') => void;
@@ -17,47 +19,49 @@ export function NewChallengeForm({ onSubmit, onCancel }: NewChallengeFormProps) 
     if (!name.trim()) return;
     if (type === 'quantitative' && (!metric || !unit.trim())) return;
     
-    const finalMetric = type === 'qualitative' ? 1 : Number(metric);
-    const finalUnit = type === 'qualitative' ? 'nivel' : unit.trim();
-
-    onSubmit(name.trim(), finalMetric, finalUnit, type);
+    onSubmit(name.trim(), Number(metric), unit.trim(), type);
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="flex p-1 bg-zinc-900 rounded-xl border border-zinc-800">
+      {/* Type Selector */}
+      <div className="grid grid-cols-2 gap-3">
         <button
           type="button"
           onClick={() => setType('quantitative')}
-          className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${
+          className={cn(
+            "flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all",
             type === 'quantitative'
-              ? 'bg-emerald-500 text-white shadow-lg'
-              : 'text-zinc-500 hover:text-zinc-300'
-          }`}
+              ? "bg-emerald-500/10 border-emerald-500 text-emerald-400"
+              : "bg-zinc-950 border-zinc-800 text-zinc-500 hover:border-zinc-700"
+          )}
         >
-          Cuantitativo
+          <BarChart3 className="w-6 h-6" />
+          <span className="text-xs font-bold uppercase tracking-wider">Cuantitativo</span>
         </button>
         <button
           type="button"
           onClick={() => setType('qualitative')}
-          className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${
+          className={cn(
+            "flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all",
             type === 'qualitative'
-              ? 'bg-emerald-500 text-white shadow-lg'
-              : 'text-zinc-500 hover:text-zinc-300'
-          }`}
+              ? "bg-purple-500/10 border-purple-500 text-purple-400"
+              : "bg-zinc-950 border-zinc-800 text-zinc-500 hover:border-zinc-700"
+          )}
         >
-          Cualitativo (IA)
+          <Zap className="w-6 h-6" />
+          <span className="text-xs font-bold uppercase tracking-wider">IA Cualitativa</span>
         </button>
       </div>
 
       <div className="space-y-2">
         <label htmlFor="name" className="text-sm font-medium text-zinc-400">
-          ¿Qué quieres mejorar?
+          {type === 'quantitative' ? '¿Qué quieres mejorar?' : '¿Qué habilidad quieres desarrollar?'}
         </label>
         <input
           id="name"
           type="text"
-          placeholder="Ej. Hacer flexiones"
+          placeholder={type === 'quantitative' ? "Ej. Hacer flexiones" : "Ej. Escritura creativa"}
           value={name}
           onChange={(e) => setName(e.target.value)}
           className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
@@ -80,7 +84,7 @@ export function NewChallengeForm({ onSubmit, onCancel }: NewChallengeFormProps) 
               value={metric}
               onChange={(e) => setMetric(e.target.value)}
               className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
-              required={type === 'quantitative'}
+              required
             />
           </div>
 
@@ -95,15 +99,30 @@ export function NewChallengeForm({ onSubmit, onCancel }: NewChallengeFormProps) 
               value={unit}
               onChange={(e) => setUnit(e.target.value)}
               className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
-              required={type === 'quantitative'}
+              required
             />
           </div>
         </div>
       ) : (
-        <div className="p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl">
-          <p className="text-sm text-emerald-400 leading-relaxed">
-            La IA desglosará tu objetivo en micro-tareas diarias del 1% de mejora. Ideal para metas complejas como &quot;Aprender Inglés&quot; o &quot;Escribir un Libro&quot;.
-          </p>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label htmlFor="unit" className="text-sm font-medium text-zinc-400">
+              ¿Cómo lo medirías? (Para contexto de la IA)
+            </label>
+            <input
+              id="unit"
+              type="text"
+              placeholder="Ej. calidad, fluidez, complejidad"
+              value={unit}
+              onChange={(e) => setUnit(e.target.value)}
+              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all"
+              required
+            />
+          </div>
+          <div className="flex items-start gap-3 p-4 rounded-xl bg-purple-500/5 border border-purple-500/10 text-xs text-purple-300/80 leading-relaxed">
+            <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
+            <p>La IA generará tareas un 1% más desafiantes cada día basadas en tu objetivo. No necesitas métricas numéricas.</p>
+          </div>
         </div>
       )}
 

@@ -14,9 +14,23 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "OnePercent | Mejora un 1% cada día con IA - Hábitos Atómicos",
-  description: "Descubre OnePercent, el motor de progresión incremental impulsado por IA e inspirado en Hábitos Atómicos. Mejora un 1% cada día con micro-tareas inteligentes y crecimiento compuesto.",
-  keywords: ["hábitos", "IA", "AI Coach", "crecimiento personal", "hábitos atómicos", "interés compuesto", "productividad", "mejora continua"],
+  title: "OnePercent | Mejora un 1% cada día - Hábitos Atómicos",
+  description: "Descubre OnePercent, el motor de progresión incremental con IA inspirado en Hábitos Atómicos. Mejora un 1% cada día con micro-pasos inteligentes y conviértete en un 37% mejor en un año.",
+  keywords: ["hábitos", "crecimiento personal", "hábitos atómicos", "IA", "inteligencia artificial", "interés compuesto", "productividad", "mejora continua", "James Clear", "progreso diario"],
+  authors: [{ name: "OnePercent Team" }],
+  openGraph: {
+    title: "OnePercent | Mejora un 1% cada día - Hábitos Atómicos",
+    description: "Domina tus hábitos con el poder del interés compuesto y la IA. Sé un 3700% mejor en un año.",
+    url: "https://onepercent.app",
+    siteName: "OnePercent",
+    locale: "es_ES",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "OnePercent | Mejora un 1% cada día",
+    description: "La app inspirada en James Clear para transformar tu vida un 1% a la vez.",
+  },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

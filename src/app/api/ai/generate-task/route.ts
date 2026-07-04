@@ -2,61 +2,59 @@ import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { createClient } from '@/lib/supabase/server';
 
-export const dynamic = 'force-dynamic';
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
-const getOpenAIClient = () => {
-  return new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY || 'dummy-key',
-  });
-};
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!session) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const { habitName, streak, type } = await req.json();
+    const { challengeName, streak, unit } = await req.json();
 
-    if (!process.env.OPENAI_API_KEY) {
-      return NextResponse.json({ task: 'Micro-tarea generada (IA no configurada)' });
-    }
+    const prompt = `
+      Basado en el concepto de "Hábitos Atómicos" de James Clear, donde buscamos mejorar un 1% cada día.
 
-    if (type !== 'qualitative') {
-      return NextResponse.json({ error: 'Only qualitative habits require AI tasks' }, { status: 400 });
-    }
+      El usuario tiene un hábito llamado: "${challengeName}".
+      Actualmente tiene una racha de ${streak} días.
+      La unidad de medida es: "${unit}".
 
-    const openai = getOpenAIClient();
+      Por favor, genera la SIGUIENTE tarea específica para mañana que represente un incremento del 1% respecto al día anterior.
+      La tarea debe ser:
+      1. Concreta y accionable.
+      2. Muy pequeña (fácil de lograr).
+      3. Escrita en español de forma motivadora y breve.
 
-    const prompt = `Eres un coach experto en formación de hábitos basado en la filosofía de "Hábitos Atómicos" de James Clear.
-    El usuario tiene un hábito cualitativo llamado: "${habitName}".
-    Su racha actual es de ${streak} días.
+      Ejemplo si el hábito es "Escribir un libro":
+      Día 0: Escribe una frase.
+      Día 1: Escribe dos frases.
+      Día 2: Escribe un párrafo pequeño.
 
-    Tu tarea es generar la SIGUIENTE micro-tarea específica para hoy que represente una mejora del 1% o un paso incremental lógico.
-
-    Reglas:
-    1. La tarea debe ser extremadamente simple y realizable en menos de 5-10 minutos.
-    2. Debe ser específica y accionable (ej. "Lee 2 páginas", no "Lee un poco").
-    3. Si la racha es 0, sugiere el paso inicial más pequeño posible.
-    4. Si la racha es alta, aumenta ligeramente la dificultad o profundidad, pero mantén la filosofía del 1%.
-    5. Responde ÚNICAMENTE con la descripción de la tarea, sin introducciones ni explicaciones.
-    6. Idioma: Español.`;
+      Responde SOLO con el texto de la tarea, sin explicaciones ni comillas.
+    `;
 
     const response = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo', // Or gpt-4o if available
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: 100,
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: 'Eres un experto en formación de hábitos y productividad minimalista.' },
+        { role: 'user', content: prompt }
+      ],
       temperature: 0.7,
+      max_tokens: 100,
     });
 
-    const task = response.choices[0].message.content?.trim();
+    const nextTask = response.choices[0]?.message?.content?.trim();
 
-    return NextResponse.json({ task });
-  } catch (error) {
-    console.error('AI Task Generation Error:', error);
-    return NextResponse.json({ error: 'Failed to generate AI task' }, { status: 500 });
+    return NextResponse.json({ nextTask });
+  } catch (error: unknown) {
+    console.error('AI Generation Error:', error);
+    return NextResponse.json({ error: 'Error al generar la tarea con IA' }, { status: 500 });
   }
 }

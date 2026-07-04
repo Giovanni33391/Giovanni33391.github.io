@@ -6,7 +6,7 @@ export interface Challenge {
   currentMetric: number;
   unit: string;
   streak: number;
-  nextTask?: string;
+  nextTask?: string; // AI generated next step for qualitative habits
   startDate: string; // ISO string
   lastCompletedDate: string | null; // ISO string
   createdAt: string; // ISO string

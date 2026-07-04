@@ -176,10 +176,12 @@ export default function Home() {
         onClose={() => setIsProModalOpen(false)} 
       />
 
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-      />
+      {!user && challenges.length > 0 && (
+        <AuthModal
+          isOpen={isAuthModalOpen}
+          onClose={() => setIsAuthModalOpen(false)}
+        />
+      )}
     </main>
   );
 }
