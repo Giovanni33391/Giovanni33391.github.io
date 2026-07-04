@@ -67,13 +67,12 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         setSent(true);
       }
     } catch (err) {
-      console.error('Email sign in error:', err);
-      const isNetworkError = err instanceof TypeError && err.message === 'Failed to fetch';
-      setError(
-        isNetworkError
-          ? 'Error de conexión: No se pudo contactar con el servidor. Verifica tu conexión a internet o la configuración de Supabase.'
-          : (err instanceof Error ? err.message : 'Error al enviar el enlace')
-      );
+      const message = err instanceof Error ? err.message : 'Ha ocurrido un error inesperado';
+      if (message.includes('Failed to fetch')) {
+        setError('Error de conexión: No se pudo contactar con el servidor. Verifica tu conexión a internet y asegúrate de que las variables de entorno de Supabase estén correctamente configuradas.');
+      } else {
+        setError(message);
+      }
     } finally {
       setLoading(false);
     }
