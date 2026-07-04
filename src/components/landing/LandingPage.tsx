@@ -9,7 +9,9 @@ import {
   ArrowRight,
   CheckCircle2,
   BarChart3,
-  Smartphone
+  Smartphone,
+  Sparkles,
+  Brain
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
@@ -82,7 +84,7 @@ export function LandingPage({ onGetStarted, onSignIn }: LandingPageProps) {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="text-5xl lg:text-7xl font-extrabold tracking-tight mb-6 bg-gradient-to-b from-white to-zinc-500 bg-clip-text text-transparent leading-[1.1]"
           >
-            Sé un 3700% mejor <br /> en tan solo un año.
+            Sé un 3700% mejor <br /> con el poder de la IA.
           </motion.h1>
 
           <motion.p
@@ -91,7 +93,7 @@ export function LandingPage({ onGetStarted, onSignIn }: LandingPageProps) {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-zinc-400 text-lg lg:text-xl max-w-2xl mx-auto mb-10 leading-relaxed"
           >
-            El poder del interés compuesto aplicado a tus hábitos. Mejora un <strong>1% cada día</strong> y observa cómo pequeñas acciones se convierten en resultados extraordinarios.
+            Combinamos la filosofía de <strong>Hábitos Atómicos</strong> con Inteligencia Artificial para darte micro-tareas diarias personalizadas. Mejora un 1% cada día y alcanza el éxito exponencial.
           </motion.p>
 
           <motion.div
@@ -154,11 +156,13 @@ export function LandingPage({ onGetStarted, onSignIn }: LandingPageProps) {
             {/* Feature 1 */}
             <motion.div variants={itemVariants} className="p-8 rounded-3xl bg-zinc-900/50 border border-zinc-800 hover:border-emerald-500/50 transition-colors group">
               <div className="w-12 h-12 bg-emerald-500/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <TrendingUp className="w-6 h-6 text-emerald-500" />
+                <Sparkles className="w-6 h-6 text-emerald-500" />
               </div>
-              <h3 className="text-xl font-bold mb-3">Progreso Exponencial</h3>
+              <h3 className="text-xl font-bold mb-3 flex items-center gap-2">
+                AI Coach Personal
+              </h3>
               <p className="text-zinc-400 leading-relaxed">
-                Nuestra fórmula calcula automáticamente tu próximo objetivo basado en un incremento del 1%. La progresión nunca se detiene.
+                Nuestra IA desglosa metas complejas como &quot;Aprender Inglés&quot; en micro-pasos accionables del 1% cada día.
               </p>
             </motion.div>
 
@@ -211,39 +215,49 @@ export function LandingPage({ onGetStarted, onSignIn }: LandingPageProps) {
                 <div className="flex gap-4">
                   <div className="flex-shrink-0 w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold">3</div>
                   <div>
-                    <h4 className="text-lg font-bold mb-1">Mejora un 1% cada día</h4>
-                    <p className="text-zinc-400">Cada vez que completes el hábito, calculamos tu nuevo objetivo un 1% superior.</p>
+                    <h4 className="text-lg font-bold mb-1">IA genera tu micro-paso</h4>
+                    <p className="text-zinc-400">Nuestro algoritmo e IA calculan tu próximo objetivo un 1% superior o tu siguiente tarea lógica.</p>
                   </div>
                 </div>
               </div>
             </div>
             <div className="relative">
               <div className="aspect-square rounded-3xl bg-gradient-to-br from-emerald-500/20 to-blue-500/20 border border-white/5 flex items-center justify-center p-8">
+                {/* AI Habit Example Card */}
                 <div className="w-full h-full bg-zinc-950 rounded-2xl border border-zinc-800 shadow-2xl flex flex-col p-6">
-                  <div className="flex items-center gap-3 mb-8">
-                    <div className="w-10 h-10 bg-emerald-500 rounded-lg flex items-center justify-center">
-                      <Target className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-bold text-white">Lectura diaria</div>
-                      <div className="text-[10px] text-zinc-500">Racha de 15 días</div>
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    <div className="h-2 w-full bg-zinc-900 rounded-full overflow-hidden">
-                      <div className="h-full w-[65%] bg-emerald-500" />
-                    </div>
-                    <div className="flex justify-between items-end">
-                      <div>
-                        <div className="text-xs text-zinc-500 mb-1">Objetivo de hoy</div>
-                        <div className="text-2xl font-bold text-white">11.6 <span className="text-sm font-normal text-zinc-500">minutos</span></div>
+                  <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-emerald-500 rounded-lg flex items-center justify-center">
+                        <Brain className="w-6 h-6 text-white" />
                       </div>
-                      <div className="text-xs text-emerald-500 font-bold">+1% aumento</div>
+                      <div>
+                        <div className="text-sm font-bold text-white">Aprender Inglés</div>
+                        <div className="text-[10px] text-zinc-500 italic">Hábit Cualitativo</div>
+                      </div>
+                    </div>
+                    <span className="flex items-center text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                      <Sparkles className="w-2.5 h-2.5 mr-1" /> IA
+                    </span>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="text-xs text-zinc-500 mb-1 flex items-center gap-2">
+                      <Brain className="w-3 h-3" /> Micro-tarea generada por IA
+                    </div>
+                    <div className="p-4 bg-zinc-900/50 rounded-xl border border-zinc-800 italic text-zinc-200 text-sm leading-relaxed">
+                      &quot;Lee 2 páginas de un artículo en inglés sobre un tema que te apasione.&quot;
                     </div>
                   </div>
-                  <div className="mt-auto">
-                    <div className="w-full h-12 rounded-xl border border-dashed border-zinc-800 flex items-center justify-center text-zinc-600 text-sm">
-                      Siguiente nivel: 11.7 min
+
+                  <div className="mt-auto pt-6">
+                    <div className="flex justify-between items-center mb-2">
+                      <div className="text-[10px] text-zinc-500 uppercase tracking-wider font-bold">Racha Actual</div>
+                      <div className="flex items-center text-emerald-500 text-xs font-bold">
+                        <TrendingUp className="w-3 h-3 mr-1" /> +1% Crecimiento
+                      </div>
+                    </div>
+                    <div className="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden">
+                      <div className="h-full w-[40%] bg-emerald-500" />
                     </div>
                   </div>
                 </div>
@@ -257,7 +271,7 @@ export function LandingPage({ onGetStarted, onSignIn }: LandingPageProps) {
       <section className="py-24 lg:py-48 px-4 relative overflow-hidden">
         <div className="absolute inset-0 bg-emerald-600 -z-10 opacity-5" />
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl lg:text-6xl font-bold mb-8 tracking-tight">¿Listo para ser 37 veces mejor?</h2>
+          <h2 className="text-4xl lg:text-6xl font-bold mb-8 tracking-tight">¿Listo para que la IA <br /> impulse tu crecimiento?</h2>
           <p className="text-zinc-400 text-lg mb-12 max-w-xl mx-auto">
             Únete a otros que ya están hackeando su crecimiento diario. Sin fricciones, sin complicaciones.
           </p>
