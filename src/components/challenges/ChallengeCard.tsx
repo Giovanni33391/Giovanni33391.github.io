@@ -16,6 +16,7 @@ interface ChallengeCardProps {
 
 export function ChallengeCard({ challenge, onComplete, onDelete, isToday }: ChallengeCardProps) {
   const [mounted, setMounted] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setMounted(true), 0);
@@ -27,9 +28,9 @@ export function ChallengeCard({ challenge, onComplete, onDelete, isToday }: Chal
   
   const handleComplete = async () => {
     if (completedToday || isCompleting) return;
-
-    setIsCompleting(true);
     
+    setIsCompleting(true);
+
     // Trigger confetti
     confetti({
       particleCount: 100,
@@ -132,11 +133,9 @@ export function ChallengeCard({ challenge, onComplete, onDelete, isToday }: Chal
             !completedToday && isQualitative && "bg-purple-600 hover:bg-purple-500 border-none"
           )}
           onClick={handleComplete}
-          disabled={completedToday || isCompleting}
+          disabled={completedToday}
         >
-          {isCompleting ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
-          ) : completedToday ? (
+          {completedToday ? (
             <span className="flex items-center">
               <CheckCircle2 className="w-5 h-5 mr-2" />
               Completado por hoy

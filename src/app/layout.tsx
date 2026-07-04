@@ -15,7 +15,7 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: "OnePercent | Mejora un 1% cada día - Hábitos Atómicos",
-  description: "Descubre OnePercent, el motor de progresión incremental con IA inspirado en Hábitos Atómicos. Mejora un 1% cada día con micro-pasos inteligentes y conviértete en un 37% mejor en un año.",
+  description: "Descubre OnePercent, el motor de progresión incremental con IA inspirado en Hábitos Atómicos. Mejora un 1% cada día con micro-pasos inteligentes y conviértete en un 3700% mejor en un año.",
   keywords: ["hábitos", "crecimiento personal", "hábitos atómicos", "IA", "inteligencia artificial", "interés compuesto", "productividad", "mejora continua", "James Clear", "progreso diario"],
   authors: [{ name: "OnePercent Team" }],
   openGraph: {

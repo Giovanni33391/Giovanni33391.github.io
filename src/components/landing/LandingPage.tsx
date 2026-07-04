@@ -13,9 +13,7 @@ import {
   Sparkles,
   BrainCircuit,
   Rocket,
-  Flame,
-  ChevronRight,
-  Plus
+  Flame
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
@@ -106,7 +104,7 @@ export function LandingPage({ onGetStarted, onSignIn }: LandingPageProps) {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="text-5xl lg:text-7xl font-extrabold tracking-tight mb-6 bg-gradient-to-b from-white to-zinc-500 bg-clip-text text-transparent leading-[1.1]"
           >
-            Sé un 3700% mejor <br /> con el poder de la IA.
+            Sé un 3700% mejor <br /> en tan solo un año.
           </motion.h1>
 
           <motion.p
@@ -115,7 +113,7 @@ export function LandingPage({ onGetStarted, onSignIn }: LandingPageProps) {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-zinc-400 text-lg lg:text-xl max-w-2xl mx-auto mb-10 leading-relaxed"
           >
-            Combinamos la filosofía de <strong>Hábitos Atómicos</strong> con Inteligencia Artificial para darte micro-tareas diarias personalizadas. Mejora un 1% cada día y alcanza el éxito exponencial.
+            El poder del interés compuesto aplicado a tus hábitos. Mejora un <strong>1% cada día</strong> y observa cómo pequeñas acciones se convierten en resultados extraordinarios.
           </motion.p>
 
           <motion.div
@@ -274,13 +272,11 @@ export function LandingPage({ onGetStarted, onSignIn }: LandingPageProps) {
               className="p-8 rounded-3xl bg-zinc-900/50 border border-zinc-800 hover:border-emerald-500/50 transition-colors group"
             >
               <div className="w-12 h-12 bg-emerald-500/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <Sparkles className="w-6 h-6 text-emerald-500" />
+                <TrendingUp className="w-6 h-6 text-emerald-500" />
               </div>
-              <h3 className="text-xl font-bold mb-3 flex items-center gap-2">
-                AI Coach Personal
-              </h3>
+              <h3 className="text-xl font-bold mb-3">Progreso Exponencial</h3>
               <p className="text-zinc-400 leading-relaxed">
-                Nuestra IA desglosa metas complejas como &quot;Aprender Inglés&quot; en micro-pasos accionables del 1% cada día.
+                Nuestra fórmula calcula automáticamente tu próximo objetivo basado en un incremento del 1%. La progresión nunca se detiene.
               </p>
             </motion.div>
 
@@ -526,7 +522,7 @@ export function LandingPage({ onGetStarted, onSignIn }: LandingPageProps) {
           className="absolute inset-0 bg-emerald-600 -z-10 opacity-5 rounded-full blur-[120px]"
         />
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl lg:text-6xl font-bold mb-8 tracking-tight">¿Listo para que la IA <br /> impulse tu crecimiento?</h2>
+          <h2 className="text-4xl lg:text-6xl font-bold mb-8 tracking-tight">¿Listo para ser 37 veces mejor?</h2>
           <p className="text-zinc-400 text-lg mb-12 max-w-xl mx-auto">
             Únete a otros que ya están hackeando su crecimiento diario. Sin fricciones, sin complicaciones.
           </p>

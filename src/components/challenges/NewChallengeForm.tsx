@@ -16,8 +16,7 @@ export function NewChallengeForm({ onSubmit, onCancel }: NewChallengeFormProps) 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
-    if (type === 'quantitative' && (!metric || !unit.trim())) return;
+    if (!name.trim() || !metric || !unit.trim()) return;
     
     onSubmit(name.trim(), Number(metric), unit.trim(), type);
   };
