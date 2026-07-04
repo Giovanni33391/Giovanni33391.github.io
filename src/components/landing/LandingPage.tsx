@@ -9,7 +9,11 @@ import {
   ArrowRight,
   CheckCircle2,
   BarChart3,
-  Smartphone
+  Smartphone,
+  Sparkles,
+  BrainCircuit,
+  Rocket,
+  Flame
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
@@ -109,6 +113,88 @@ export function LandingPage({ onGetStarted, onSignIn }: LandingPageProps) {
               Gratis para siempre
             </div>
           </motion.div>
+        </div>
+      </section>
+
+      {/* AI Features Section - NEW */}
+      <section className="py-24 lg:py-32 px-4 relative">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-3xl h-[400px] bg-purple-500/5 blur-[120px] rounded-full -z-10" />
+
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="order-2 lg:order-1"
+            >
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-bold uppercase tracking-wider mb-6">
+                <Sparkles className="w-3 h-3" />
+                Nueva Función
+              </div>
+              <h2 className="text-3xl lg:text-5xl font-bold mb-6">IA que diseña tu camino</h2>
+              <p className="text-zinc-400 text-lg mb-8 leading-relaxed">
+                ¿No sabes cómo mejorar un 1% en habilidades subjetivas? Nuestra IA analiza tu progreso y genera el siguiente micro-desafío específico para ti.
+              </p>
+
+              <div className="space-y-6">
+                <div className="flex gap-4 p-4 rounded-2xl bg-zinc-900/50 border border-zinc-800">
+                  <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center flex-shrink-0">
+                    <BrainCircuit className="w-5 h-5 text-purple-400" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-zinc-100 mb-1">Micro-pasos Inteligentes</h4>
+                    <p className="text-sm text-zinc-500">Divide metas complejas en acciones diarias ridículamente pequeñas.</p>
+                  </div>
+                </div>
+                <div className="flex gap-4 p-4 rounded-2xl bg-zinc-900/50 border border-zinc-800">
+                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                    <Rocket className="w-5 h-5 text-blue-400" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-zinc-100 mb-1">Adaptación en Tiempo Real</h4>
+                    <p className="text-sm text-zinc-500">La IA ajusta la dificultad basada en tu racha y retroalimentación.</p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              className="order-1 lg:order-2 relative"
+            >
+              <div className="aspect-square rounded-3xl bg-gradient-to-br from-purple-500/20 to-blue-500/20 border border-white/5 flex items-center justify-center p-8">
+                <div className="w-full bg-zinc-950 rounded-2xl border border-purple-500/30 shadow-2xl p-6 relative overflow-hidden">
+                  <div className="flex items-center gap-3 mb-8">
+                    <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center">
+                      <Zap className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-white">Escritura Creativa</div>
+                      <div className="text-[10px] text-purple-400 font-bold uppercase tracking-widest">Modo IA Activado</div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 mb-6">
+                    <div className="p-4 rounded-xl bg-purple-500/5 border border-purple-500/20">
+                      <p className="text-[10px] font-bold text-purple-400 uppercase tracking-widest mb-2">Próximo desafío del 1%</p>
+                      <p className="text-zinc-200 italic">&quot;Hoy, escribe una sola frase que use una metáfora sobre el tiempo. Solo una.&quot;</p>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center text-xs text-zinc-500">
+                    <div className="flex items-center gap-1">
+                      <Flame className="w-3 h-3 text-orange-500" />
+                      Racha: 12 días
+                    </div>
+                    <div className="text-purple-400 font-bold">Inspirado por James Clear</div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
         </div>
       </section>
 
