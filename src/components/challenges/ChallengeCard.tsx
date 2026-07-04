@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle2, Flame, TrendingUp, Trash2 } from 'lucide-react';
+import { CheckCircle2, Flame, TrendingUp, Trash2, Sparkles, Loader2 } from 'lucide-react';
 import { Area, AreaChart, ResponsiveContainer } from 'recharts';
 import confetti from 'canvas-confetti';
 import { Challenge } from '@/types';
@@ -16,9 +16,12 @@ interface ChallengeCardProps {
 
 export function ChallengeCard({ challenge, onComplete, onDelete, isToday }: ChallengeCardProps) {
   const completedToday = isToday(challenge.lastCompletedDate);
+  const [isCompleting, setIsCompleting] = useState(false);
   
-  const handleComplete = () => {
-    if (completedToday) return;
+  const handleComplete = async () => {
+    if (completedToday || isCompleting) return;
+
+    setIsCompleting(true);
     
     // Trigger confetti
     confetti({
@@ -28,7 +31,11 @@ export function ChallengeCard({ challenge, onComplete, onDelete, isToday }: Chal
       colors: ['#34d399', '#10b981', '#059669'] // Emerald shades
     });
     
-    onComplete(challenge.id);
+    try {
+      await onComplete(challenge.id);
+    } finally {
+      setIsCompleting(false);
+    }
   };
 
   // Generate mock chart data projecting 30 days of 1% growth
@@ -74,14 +81,29 @@ export function ChallengeCard({ challenge, onComplete, onDelete, isToday }: Chal
         </div>
 
         <div className="flex items-end justify-between mb-8">
-          <div>
-            <p className="text-sm text-zinc-400 mb-1">Objetivo de hoy</p>
-            <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-black text-zinc-100 tracking-tight">
-                {formatMetric(challenge.currentMetric)}
-              </span>
-              <span className="text-zinc-500 font-medium">{challenge.unit}</span>
-            </div>
+          <div className="w-full">
+            <p className="text-sm text-zinc-400 mb-1 flex items-center justify-between">
+              Objetivo de hoy
+              {challenge.type === 'qualitative' && (
+                <span className="flex items-center text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                  <Sparkles className="w-2.5 h-2.5 mr-1" /> IA
+                </span>
+              )}
+            </p>
+            {challenge.type === 'qualitative' ? (
+              <div className="mt-2 p-3 bg-zinc-950 border border-zinc-800 rounded-xl">
+                <p className="text-zinc-200 text-sm italic leading-relaxed">
+                  &quot;{challenge.nextTask || 'Calculando tu próximo paso...'}&quot;
+                </p>
+              </div>
+            ) : (
+              <div className="flex items-baseline gap-2">
+                <span className="text-4xl font-black text-zinc-100 tracking-tight">
+                  {formatMetric(challenge.currentMetric)}
+                </span>
+                <span className="text-zinc-500 font-medium">{challenge.unit}</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -90,15 +112,17 @@ export function ChallengeCard({ challenge, onComplete, onDelete, isToday }: Chal
           size="lg" 
           className="w-full relative overflow-hidden"
           onClick={handleComplete}
-          disabled={completedToday}
+          disabled={completedToday || isCompleting}
         >
-          {completedToday ? (
+          {isCompleting ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : completedToday ? (
             <span className="flex items-center">
               <CheckCircle2 className="w-5 h-5 mr-2" />
               Completado por hoy
             </span>
           ) : (
-            "Completar 1% de hoy"
+            challenge.type === 'qualitative' ? "Tarea completada" : "Completar 1% de hoy"
           )}
         </Button>
       </div>
