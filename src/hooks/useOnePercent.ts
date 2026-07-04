@@ -10,7 +10,7 @@ const PENDING_SYNC_KEY = 'onepercent_pending_sync';
 // Define a type for pending sync actions instead of using any
 type PendingAction = 
   | { type: 'INSERT'; data: Challenge }
-  | { type: 'UPDATE'; data: { id: string; streak: number; currentMetric: number; lastCompletedDate: string } }
+  | { type: 'UPDATE'; data: { id: string; streak: number; currentMetric: number; nextTask?: string; lastCompletedDate: string } }
   | { type: 'DELETE'; data: { id: string } };
 
 // Helper to check if a date string is today
@@ -113,10 +113,12 @@ export function useOnePercent() {
             id: action.data.id,
             user_id: currentUser.id,
             name: action.data.name,
+            type: action.data.type,
             initial_metric: action.data.initialMetric,
             current_metric: action.data.currentMetric,
             unit: action.data.unit,
             streak: action.data.streak,
+            next_task: action.data.nextTask,
             last_completed_date: action.data.lastCompletedDate,
           });
           if (error) remainingActions.push(action);
@@ -124,6 +126,7 @@ export function useOnePercent() {
            const { error } = await supabase.from('challenges').update({
              streak: action.data.streak,
              current_metric: action.data.currentMetric,
+             next_task: action.data.nextTask,
              last_completed_date: action.data.lastCompletedDate
            }).eq('id', action.data.id);
 
@@ -181,10 +184,12 @@ export function useOnePercent() {
             const cloudMapped: Challenge = {
               id: dbChallenge.id,
               name: dbChallenge.name,
+              type: dbChallenge.type || 'quantitative',
               initialMetric: dbChallenge.initial_metric,
               currentMetric: dbChallenge.current_metric,
               unit: dbChallenge.unit,
               streak: dbChallenge.streak,
+              nextTask: dbChallenge.next_task,
               startDate: dbChallenge.created_at,
               lastCompletedDate: dbChallenge.last_completed_date,
               createdAt: dbChallenge.created_at,
@@ -243,14 +248,36 @@ export function useOnePercent() {
   };
 
   // Actions
-  const addChallenge = useCallback(async (name: string, initialMetric: number, unit: string) => {
+  const generateAITask = async (habitName: string, streak: number) => {
+    try {
+      const res = await fetch('/api/ai/generate-task', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ habitName, streak, type: 'qualitative' }),
+      });
+      const data = await res.json();
+      return data.task as string;
+    } catch (error) {
+      console.error('Failed to generate AI task:', error);
+      return 'Realiza una pequeña mejora hoy.';
+    }
+  };
+
+  const addChallenge = useCallback(async (name: string, initialMetric: number, unit: string, type: 'quantitative' | 'qualitative' = 'quantitative') => {
+    let nextTask: string | undefined;
+    if (type === 'qualitative') {
+      nextTask = await generateAITask(name, 0);
+    }
+
     const newChallenge: Challenge = {
       id: crypto.randomUUID(),
       name,
+      type,
       initialMetric,
       currentMetric: initialMetric,
       unit,
       streak: 0,
+      nextTask,
       startDate: new Date().toISOString(),
       lastCompletedDate: null,
       createdAt: new Date().toISOString(),
@@ -263,10 +290,12 @@ export function useOnePercent() {
         id: newChallenge.id,
         user_id: user.id,
         name: newChallenge.name,
+        type: newChallenge.type,
         initial_metric: newChallenge.initialMetric,
         current_metric: newChallenge.currentMetric,
         unit: newChallenge.unit,
         streak: newChallenge.streak,
+        next_task: newChallenge.nextTask,
         last_completed_date: newChallenge.lastCompletedDate,
       }).select().single();
 
@@ -287,6 +316,11 @@ export function useOnePercent() {
     const nextMetric = calculateCompoundedMetric(challengeToUpdate.initialMetric, newStreak);
     const now = new Date().toISOString();
 
+    let nextTask: string | undefined;
+    if (challengeToUpdate.type === 'qualitative') {
+      nextTask = await generateAITask(challengeToUpdate.name, newStreak);
+    }
+
     setChallenges(prev => 
       prev.map(challenge => {
         if (challenge.id !== id) return challenge;
@@ -294,6 +328,7 @@ export function useOnePercent() {
           ...challenge,
           streak: newStreak,
           currentMetric: nextMetric,
+          nextTask,
           lastCompletedDate: now,
         };
       })
@@ -304,6 +339,7 @@ export function useOnePercent() {
         id,
         streak: newStreak,
         currentMetric: nextMetric,
+        nextTask,
         lastCompletedDate: now
       };
 
@@ -312,6 +348,7 @@ export function useOnePercent() {
         .update({
           streak: newStreak,
           current_metric: nextMetric,
+          next_task: nextTask,
           last_completed_date: now
         })
         .eq('id', id);
