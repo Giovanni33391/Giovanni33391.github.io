@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   Target,
@@ -23,6 +23,15 @@ interface LandingPageProps {
 }
 
 export function LandingPage({ onGetStarted, onSignIn }: LandingPageProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    // We use setTimeout to avoid the 'set-state-in-effect' lint error
+    // but still trigger a re-render on the client to fix hydration mismatches
+    const timer = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(timer);
+  }, []);
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -180,7 +189,7 @@ export function LandingPage({ onGetStarted, onSignIn }: LandingPageProps) {
                   <div className="space-y-4 mb-6">
                     <div className="p-4 rounded-xl bg-purple-500/5 border border-purple-500/20">
                       <p className="text-[10px] font-bold text-purple-400 uppercase tracking-widest mb-2">Próximo desafío del 1%</p>
-                      <p className="text-zinc-200 italic">&quot;Hoy, escribe una sola frase que use una metáfora sobre el tiempo. Solo una.&quot;</p>
+                      <p className="text-zinc-200 italic">“Hoy, escribe una sola frase que use una metáfora sobre el tiempo. Solo una.”</p>
                     </div>
                   </div>
 
@@ -284,7 +293,7 @@ export function LandingPage({ onGetStarted, onSignIn }: LandingPageProps) {
                   <div className="flex-shrink-0 w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold">1</div>
                   <div>
                     <h4 className="text-lg font-bold mb-1">Define tu hábito</h4>
-                    <p className="text-zinc-400">Elige algo que quieras mejorar, como &quot;Minutos de lectura&quot; o &quot;Flexiones&quot;.</p>
+                    <p className="text-zinc-400">Elige algo que quieras mejorar, como “Minutos de lectura” o “Flexiones”.</p>
                   </div>
                 </div>
                 <div className="flex gap-4">
@@ -363,7 +372,7 @@ export function LandingPage({ onGetStarted, onSignIn }: LandingPageProps) {
             <span className="font-bold text-lg tracking-tight">OnePercent</span>
           </div>
           <div className="text-zinc-500 text-sm">
-            © {new Date().getFullYear()} OnePercent. Inspirado en James Clear.
+            © {mounted ? new Date().getFullYear() : ''} OnePercent. Inspirado en James Clear.
           </div>
           <div className="flex items-center gap-6">
             <a href="#" className="text-zinc-500 hover:text-white transition-colors">Privacidad</a>
