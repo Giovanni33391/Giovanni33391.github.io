@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { createClient } from '@/lib/supabase/server';
 
+export const dynamic = 'force-dynamic';
+
 const getOpenAIClient = () => {
   return new OpenAI({
     apiKey: process.env.OPENAI_API_KEY || 'dummy-key',
