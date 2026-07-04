@@ -117,7 +117,6 @@ export function useOnePercent() {
             current_metric: action.data.currentMetric,
             unit: action.data.unit,
             streak: action.data.streak,
-            next_task: action.data.nextTask,
             last_completed_date: action.data.lastCompletedDate,
             next_task: action.data.nextTask,
           });
@@ -240,26 +239,7 @@ export function useOnePercent() {
   const signInWithEmail = async (email: string) => {
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
-    });
-    if (error) throw error;
-  };
-
-  const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-    if (error) throw error;
-  };
-
-  const signInWithPassword = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+      options: { emailRedirectTo: window.location.origin },
     });
     if (error) throw error;
   };
@@ -302,7 +282,6 @@ export function useOnePercent() {
         current_metric: newChallenge.currentMetric,
         unit: newChallenge.unit,
         streak: newChallenge.streak,
-        next_task: newChallenge.nextTask,
         last_completed_date: newChallenge.lastCompletedDate,
         next_task: newChallenge.nextTask,
       }).select().single();
@@ -335,7 +314,6 @@ export function useOnePercent() {
           ...challenge,
           streak: newStreak,
           currentMetric: nextMetric,
-          nextTask,
           lastCompletedDate: now,
           nextTask
         };
@@ -391,8 +369,6 @@ export function useOnePercent() {
     user,
     signInWithGoogle,
     signInWithEmail,
-    signUp,
-    signInWithPassword,
     signOut,
     addChallenge,
     completeChallenge,
