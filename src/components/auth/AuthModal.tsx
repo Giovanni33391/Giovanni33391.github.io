@@ -67,7 +67,12 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         setSent(true);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ha ocurrido un error inesperado');
+      const message = err instanceof Error ? err.message : 'Ha ocurrido un error inesperado';
+      if (message.includes('Failed to fetch')) {
+        setError('Error de conexión: No se pudo contactar con el servidor. Verifica tu conexión a internet y asegúrate de que las variables de entorno de Supabase estén correctamente configuradas.');
+      } else {
+        setError(message);
+      }
     } finally {
       setLoading(false);
     }
