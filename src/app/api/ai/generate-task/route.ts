@@ -40,7 +40,10 @@ export async function POST(req: Request) {
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
-        { role: 'system', content: 'Eres un experto en formación de hábitos y productividad minimalista.' },
+        {
+          role: 'system',
+          content: 'Eres un experto en formación de hábitos, psicología del comportamiento y productividad minimalista. Tu objetivo es dar consejos extremadamente creativos, específicos y accionables.'
+        },
         { role: 'user', content: prompt }
       ],
       temperature: 0.8,
