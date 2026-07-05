@@ -18,6 +18,7 @@ create table public.challenges (
   name text not null,
   type text default 'quantitative' not null,
   initial_metric numeric not null,
+  target_metric numeric,
   unit text not null,
   streak integer default 0 not null,
   current_metric numeric not null,
@@ -88,7 +89,8 @@ create or replace function public.handle_new_user()
 returns trigger as $$
 begin
   insert into public.users (id, email)
-  values (new.id, new.email);
+  values (new.id, new.email)
+  on conflict (id) do nothing;
   return new;
 end;
 $$ language plpgsql security definer;

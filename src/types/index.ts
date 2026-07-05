@@ -4,6 +4,7 @@ export interface Challenge {
   type: 'quantitative' | 'qualitative';
   initialMetric: number;
   currentMetric: number;
+  targetMetric?: number;
   unit: string;
   streak: number;
   nextTask?: string; // AI generated next step for qualitative habits

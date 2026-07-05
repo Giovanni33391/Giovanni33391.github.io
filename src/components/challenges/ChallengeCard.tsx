@@ -121,6 +121,20 @@ export function ChallengeCard({ challenge, onComplete, onDelete, isToday }: Chal
                 </span>
                 <span className="text-zinc-500 font-medium">{challenge.unit}</span>
               </div>
+              {challenge.targetMetric && challenge.targetMetric > challenge.currentMetric && (
+                <div className="mt-2 flex items-center gap-1.5 text-[10px] font-medium text-emerald-500/80 bg-emerald-500/5 py-1 px-2 rounded-lg border border-emerald-500/10 w-fit">
+                  <Sparkles className="w-3 h-3" />
+                  <span>
+                    Meta: {challenge.targetMetric} {challenge.unit} • Est. {(() => {
+                      const days = Math.log(challenge.targetMetric / challenge.initialMetric) / Math.log(1.01);
+                      const remainingDays = Math.ceil(days) - challenge.streak;
+                      if (remainingDays <= 0) return "¡Casi llegas!";
+                      if (remainingDays > 365) return "1 año o más";
+                      return `${remainingDays} días más`;
+                    })()}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         )}

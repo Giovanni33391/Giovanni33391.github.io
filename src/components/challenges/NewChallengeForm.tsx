@@ -4,13 +4,14 @@ import { Zap, BarChart3, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface NewChallengeFormProps {
-  onSubmit: (name: string, initialMetric: number, unit: string, type: 'quantitative' | 'qualitative') => void;
+  onSubmit: (name: string, initialMetric: number, unit: string, type: 'quantitative' | 'qualitative', targetMetric?: number) => void;
   onCancel: () => void;
 }
 
 export function NewChallengeForm({ onSubmit, onCancel }: NewChallengeFormProps) {
   const [name, setName] = useState('');
   const [metric, setMetric] = useState('1');
+  const [targetMetric, setTargetMetric] = useState('');
   const [unit, setUnit] = useState('');
   const [type, setType] = useState<'quantitative' | 'qualitative'>('quantitative');
 
@@ -18,7 +19,13 @@ export function NewChallengeForm({ onSubmit, onCancel }: NewChallengeFormProps) 
     e.preventDefault();
     if (!name.trim() || !metric || !unit.trim()) return;
     
-    onSubmit(name.trim(), Number(metric), unit.trim(), type);
+    onSubmit(
+      name.trim(),
+      Number(metric),
+      unit.trim(),
+      type,
+      targetMetric ? Number(targetMetric) : undefined
+    );
   };
 
   return (
@@ -69,39 +76,60 @@ export function NewChallengeForm({ onSubmit, onCancel }: NewChallengeFormProps) 
       </div>
       
       {type === 'quantitative' ? (
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label htmlFor="metric" className="text-sm font-medium text-zinc-400">
-              Métrica base
-            </label>
-            <input
-              id="metric"
-              type="number"
-              min="1"
-              step="any"
-              placeholder="Ej. 10"
-              value={metric}
-              onChange={(e) => setMetric(e.target.value)}
-              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
-              required
-            />
+        <>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label htmlFor="metric" className="text-sm font-medium text-zinc-400">
+                Métrica inicial
+              </label>
+              <input
+                id="metric"
+                type="number"
+                min="0"
+                step="any"
+                placeholder="Ej. 1"
+                value={metric}
+                onChange={(e) => setMetric(e.target.value)}
+                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="unit" className="text-sm font-medium text-zinc-400">
+                Unidad
+              </label>
+              <input
+                id="unit"
+                type="text"
+                placeholder="Ej. flexiones"
+                value={unit}
+                onChange={(e) => setUnit(e.target.value)}
+                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
+                required
+              />
+            </div>
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="unit" className="text-sm font-medium text-zinc-400">
-              Unidad
+            <label htmlFor="targetMetric" className="text-sm font-medium text-zinc-400">
+              Meta final (opcional)
             </label>
             <input
-              id="unit"
-              type="text"
-              placeholder="Ej. repeticiones"
-              value={unit}
-              onChange={(e) => setUnit(e.target.value)}
+              id="targetMetric"
+              type="number"
+              min="0"
+              step="any"
+              placeholder="Ej. 50"
+              value={targetMetric}
+              onChange={(e) => setTargetMetric(e.target.value)}
               className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
-              required
             />
+            <p className="text-[10px] text-zinc-500 mt-1">
+              La IA calculará cuántos días te llevará alcanzar esta meta mejorando un 1% diario.
+            </p>
           </div>
-        </div>
+        </>
       ) : (
         <div className="space-y-4">
           <div className="space-y-2">

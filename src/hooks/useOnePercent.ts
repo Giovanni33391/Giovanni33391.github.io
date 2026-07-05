@@ -120,6 +120,7 @@ export function useOnePercent() {
             type: action.data.type,
             initial_metric: action.data.initialMetric,
             current_metric: action.data.currentMetric,
+            target_metric: action.data.targetMetric,
             unit: action.data.unit,
             streak: action.data.streak,
             last_completed_date: action.data.lastCompletedDate,
@@ -187,6 +188,7 @@ export function useOnePercent() {
               type: dbChallenge.type || 'quantitative',
               initialMetric: dbChallenge.initial_metric,
               currentMetric: dbChallenge.current_metric,
+              targetMetric: dbChallenge.target_metric,
               unit: dbChallenge.unit,
               streak: dbChallenge.streak,
               nextTask: dbChallenge.next_task,
@@ -280,7 +282,7 @@ export function useOnePercent() {
   };
 
   // Actions
-  const addChallenge = useCallback(async (name: string, initialMetric: number, unit: string, type: 'quantitative' | 'qualitative' = 'quantitative', frequency: number[] = [0, 1, 2, 3, 4, 5, 6]) => {
+  const addChallenge = useCallback(async (name: string, initialMetric: number, unit: string, type: 'quantitative' | 'qualitative' = 'quantitative', targetMetric?: number, frequency: number[] = [0, 1, 2, 3, 4, 5, 6]) => {
     let nextTask = undefined;
     if (type === 'qualitative') {
       nextTask = await fetchNextAITask(name, 0, unit);
@@ -295,6 +297,7 @@ export function useOnePercent() {
       type,
       initialMetric,
       currentMetric: initialMetric,
+      targetMetric,
       unit,
       streak: 0,
       nextTask,
@@ -314,6 +317,7 @@ export function useOnePercent() {
         type: newChallenge.type,
         initial_metric: newChallenge.initialMetric,
         current_metric: newChallenge.currentMetric,
+        target_metric: newChallenge.targetMetric,
         unit: newChallenge.unit,
         streak: newChallenge.streak,
         last_completed_date: newChallenge.lastCompletedDate,
