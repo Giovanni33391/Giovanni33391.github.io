@@ -221,12 +221,12 @@ export function useOnePercent() {
   }, [challenges, isLoaded]);
 
   // AI Task Generation Helper
-  const fetchNextAITask = async (challengeName: string, streak: number, unit: string) => {
+  const fetchNextAITask = async (challengeName: string, streak: number, unit: string, lastTask?: string) => {
     try {
       const response = await fetch('/api/ai/generate-task', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ challengeName, streak, unit }),
+        body: JSON.stringify({ challengeName, streak, unit, lastTask }),
       });
       const data = await response.json();
       return data.nextTask;
@@ -278,7 +278,7 @@ export function useOnePercent() {
     if (type === 'qualitative') {
       nextTask = await fetchNextAITask(name, 0, unit);
       if (!nextTask) {
-        nextTask = getBetterFallback(name, 0);
+        nextTask = "Identifica una pequeña mejora para mañana.";
       }
     }
 
@@ -330,9 +330,9 @@ export function useOnePercent() {
 
     let nextTask = challengeToUpdate.nextTask;
     if (challengeToUpdate.type === 'qualitative') {
-      nextTask = await fetchNextAITask(challengeToUpdate.name, newStreak, challengeToUpdate.unit);
+      nextTask = await fetchNextAITask(challengeToUpdate.name, newStreak, challengeToUpdate.unit, challengeToUpdate.nextTask);
       if (!nextTask) {
-        nextTask = getBetterFallback(challengeToUpdate.name, newStreak);
+        nextTask = "¡Buen trabajo! Mañana busca otro pequeño avance del 1%.";
       }
     }
 
