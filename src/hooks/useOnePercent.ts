@@ -261,14 +261,24 @@ export function useOnePercent() {
     setIsGuestMode(true);
   }, []);
 
+  const getBetterFallback = (name: string, streak: number) => {
+    const fallbacks = [
+      `Hoy enfócate en la técnica perfecta para ${name}, más que en la cantidad.`,
+      `Intenta realizar ${name} en un entorno diferente para refrescar tu mente.`,
+      `Dedica 2 minutos extra hoy a reflexionar sobre tu progreso con ${name}.`,
+      `Busca un micro-detalle en ${name} que puedas optimizar hoy.`,
+      `Prueba a hacer ${name} en un horario ligeramente distinto al de ayer.`
+    ];
+    return fallbacks[streak % fallbacks.length];
+  };
+
   // Actions
   const addChallenge = useCallback(async (name: string, initialMetric: number, unit: string, type: 'quantitative' | 'qualitative' = 'quantitative') => {
     let nextTask = undefined;
     if (type === 'qualitative') {
-      if (user) {
-        nextTask = await fetchNextAITask(name, 0, unit);
-      } else {
-        nextTask = "Identifica una pequeña mejora para mañana.";
+      nextTask = await fetchNextAITask(name, 0, unit);
+      if (!nextTask) {
+        nextTask = getBetterFallback(name, 0);
       }
     }
 
@@ -320,10 +330,9 @@ export function useOnePercent() {
 
     let nextTask = challengeToUpdate.nextTask;
     if (challengeToUpdate.type === 'qualitative') {
-      if (user) {
-        nextTask = await fetchNextAITask(challengeToUpdate.name, newStreak, challengeToUpdate.unit);
-      } else {
-        nextTask = "¡Buen trabajo! Mañana busca otro pequeño avance del 1%.";
+      nextTask = await fetchNextAITask(challengeToUpdate.name, newStreak, challengeToUpdate.unit);
+      if (!nextTask) {
+        nextTask = getBetterFallback(challengeToUpdate.name, newStreak);
       }
     }
 

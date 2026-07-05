@@ -10,12 +10,7 @@ export async function POST(req: Request) {
       apiKey: process.env.OPENAI_API_KEY,
     });
 
-    const supabase = await createClient();
-    const { data: { session } } = await supabase.auth.getSession();
-
-    if (!session) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
+    // Allow guest users to use AI generation for testing/trial
 
     const { challengeName, streak, unit } = await req.json();
 
@@ -41,13 +36,16 @@ export async function POST(req: Request) {
     `;
 
     const response = await openai.chat.completions.create({
-      model: 'gpt-5.4-mini',
+      model: 'gpt-4o-mini',
       messages: [
-        { role: 'system', content: 'Eres un experto en formación de hábitos y productividad minimalista.' },
+        {
+          role: 'system',
+          content: 'Eres un experto en formación de hábitos, psicología del comportamiento y productividad minimalista. Tu objetivo es dar consejos extremadamente creativos, específicos y accionables.'
+        },
         { role: 'user', content: prompt }
       ],
-      temperature: 0.7,
-      max_tokens: 100,
+      temperature: 0.8,
+      max_tokens: 150,
     });
 
     const nextTask = response.choices[0]?.message?.content?.trim();
