@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle2, Flame, TrendingUp, Trash2, Zap, Sparkles } from 'lucide-react';
+import { CheckCircle2, Flame, TrendingUp, Trash2, Zap, Sparkles, Target } from 'lucide-react';
 import { Area, AreaChart, ResponsiveContainer } from 'recharts';
 import confetti from 'canvas-confetti';
 import { Challenge } from '@/types';
@@ -25,6 +25,19 @@ export function ChallengeCard({ challenge, onComplete, onDelete, isToday }: Chal
 
   const completedToday = isToday(challenge.lastCompletedDate);
   const isQualitative = challenge.type === 'qualitative';
+
+  const daysToTarget = useMemo(() => {
+    if (isQualitative) return challenge.estimatedDays;
+    if (!challenge.targetMetric || challenge.targetMetric <= challenge.currentMetric) return null;
+
+    // Formula for compound growth: target = current * (1.01)^n
+    // n = log(target/current) / log(1.01)
+    const days = Math.log(challenge.targetMetric / challenge.currentMetric) / Math.log(1.01);
+    const roundedDays = Math.ceil(days);
+
+    if (roundedDays > 365) return "un año o más";
+    return roundedDays;
+  }, [challenge.currentMetric, challenge.targetMetric, challenge.estimatedDays, isQualitative]);
   
   const handleComplete = async () => {
     if (completedToday || isCompleting) return;
@@ -110,6 +123,12 @@ export function ChallengeCard({ challenge, onComplete, onDelete, isToday }: Chal
             <p className="text-zinc-100 font-medium leading-relaxed">
               {challenge.nextTask || 'Generando tu próximo desafío...'}
             </p>
+            {daysToTarget && (
+              <div className="mt-3 flex items-center gap-1.5 text-[10px] font-bold text-purple-400/80 uppercase tracking-wider">
+                <Sparkles className="w-3 h-3" />
+                Faltan aprox. {daysToTarget} {!isNaN(Number(daysToTarget)) ? 'días' : ''}
+              </div>
+            )}
           </div>
         ) : (
           <div className="flex items-end justify-between mb-8">
@@ -121,6 +140,12 @@ export function ChallengeCard({ challenge, onComplete, onDelete, isToday }: Chal
                 </span>
                 <span className="text-zinc-500 font-medium">{challenge.unit}</span>
               </div>
+              {daysToTarget && (
+                <div className="mt-1 flex items-center gap-1 text-[10px] font-bold text-emerald-500/80 uppercase tracking-wider">
+                  <Target className="w-3 h-3" />
+                  Meta: {challenge.targetMetric} — Faltan {daysToTarget} {!isNaN(Number(daysToTarget)) ? 'días' : ''}
+                </div>
+              )}
             </div>
           </div>
         )}

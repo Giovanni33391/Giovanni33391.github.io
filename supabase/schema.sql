@@ -17,9 +17,14 @@ create table public.challenges (
   user_id uuid references public.users(id) on delete cascade not null,
   name text not null,
   initial_metric numeric not null,
+  target_metric numeric,
+  target_goal text,
+  estimated_days text,
   unit text not null,
   streak integer default 0 not null,
   current_metric numeric not null,
+  frequency integer[] default '{0,1,2,3,4,5,6}'::integer[] not null,
+  initial_context text,
   last_completed_date timestamp with time zone,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
