@@ -10,6 +10,7 @@ import { Modal } from '@/components/ui/Modal';
 import { EmptyState } from '@/components/challenges/EmptyState';
 import { ChallengeCard } from '@/components/challenges/ChallengeCard';
 import { NewChallengeForm } from '@/components/challenges/NewChallengeForm';
+import { StatsDashboard } from '@/components/dashboard/StatsDashboard';
 import { ProModal } from '@/components/ui/ProModal';
 import { LandingPage } from '@/components/landing/LandingPage';
 import { AuthModal } from '@/components/auth/AuthModal';
@@ -21,6 +22,7 @@ export default function Home() {
     isLoaded, 
     user,
     signOut,
+    stats,
     addChallenge, 
     completeChallenge, 
     deleteChallenge, 
@@ -132,6 +134,11 @@ export default function Home() {
           )}
         </div>
       </motion.header>
+
+      {/* Stats Section */}
+      {stats && (
+        <StatsDashboard stats={stats} />
+      )}
 
       {/* Day Selector Tabs */}
       {challenges.length > 0 && (

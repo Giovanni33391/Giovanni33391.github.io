@@ -1,11 +1,20 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Challenge } from '@/types';
 import { calculateCompoundedMetric } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
 
 const STORAGE_KEY = 'onepercent_challenges';
+const LOGS_KEY = 'onepercent_logs';
 const PENDING_SYNC_KEY = 'onepercent_pending_sync';
+
+export interface ChallengeLog {
+  id?: string;
+  challenge_id: string;
+  user_id?: string;
+  metric_achieved: number;
+  completed_at: string;
+}
 
 // Define a type for pending sync actions instead of using any
 type PendingAction = 
@@ -39,6 +48,12 @@ export const isYesterday = (dateString: string | null) => {
 };
 
 export function useOnePercent() {
+  const [logs, setLogs] = useState<ChallengeLog[]>(() => {
+    if (typeof window === 'undefined') return [];
+    const stored = localStorage.getItem(LOGS_KEY);
+    return stored ? JSON.parse(stored) : [];
+  });
+
   const [challenges, setChallenges] = useState<Challenge[]>(() => {
     // 1. Synchronously initialize from local storage to prevent hydration mismatch
     if (typeof window === 'undefined') return [];
@@ -167,6 +182,16 @@ export function useOnePercent() {
 
       if (error) return;
 
+      const { data: logsData } = await supabase
+        .from('challenge_logs')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('completed_at', { ascending: false });
+
+      if (logsData) {
+        setLogs(logsData);
+      }
+
       if (data) {
         setChallenges(prevLocal => {
           const localMap = new Map(prevLocal.map(c => [c.id, c]));
@@ -216,8 +241,9 @@ export function useOnePercent() {
   useEffect(() => {
     if (isLoaded) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(challenges));
+      localStorage.setItem(LOGS_KEY, JSON.stringify(logs));
     }
-  }, [challenges, isLoaded]);
+  }, [challenges, logs, isLoaded]);
 
   // AI Task Generation Helper
   const fetchNextAITask = async (challengeName: string, streak: number, unit: string, lastTask?: string, initialContext?: string) => {
@@ -345,6 +371,15 @@ export function useOnePercent() {
       })
     );
 
+    const newLog: ChallengeLog = {
+      challenge_id: id,
+      user_id: user?.id,
+      metric_achieved: nextMetric,
+      completed_at: now
+    };
+
+    setLogs(prev => [newLog, ...prev]);
+
     if (user) {
       const updateData = {
         id,
@@ -367,12 +402,7 @@ export function useOnePercent() {
       if (updateError) {
         addPendingSync({ type: 'UPDATE', data: updateData });
       } else {
-        await supabase.from('challenge_logs').insert({
-          challenge_id: id,
-          user_id: user.id,
-          metric_achieved: nextMetric,
-          completed_at: now
-        });
+        await supabase.from('challenge_logs').insert(newLog);
       }
     }
   }, [challenges, user, supabase, addPendingSync]);
@@ -388,8 +418,42 @@ export function useOnePercent() {
     }
   }, [user, supabase, addPendingSync]);
 
+  const stats = useMemo(() => {
+    if (challenges.length === 0) return null;
+
+    const totalCompoundedGrowth = challenges.reduce((acc, c) => {
+      const growth = ((c.currentMetric - c.initialMetric) / c.initialMetric) * 100;
+      return acc + (isNaN(growth) ? 0 : growth);
+    }, 0);
+
+    const bestStreak = Math.max(...challenges.map(c => c.streak), 0);
+
+    // Weekly activity (last 7 days)
+    const now = new Date();
+    const weeklyActivity = Array.from({ length: 7 }).map((_, i) => {
+      const d = new Date();
+      d.setDate(now.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      const count = logs.filter(l => l.completed_at.startsWith(dateStr)).length;
+      return { date: dateStr, count };
+    }).reverse();
+
+    const totalCompletions = logs.length;
+    const masteryLevel = Math.floor(Math.sqrt(totalCompletions * 10));
+
+    return {
+      totalCompoundedGrowth,
+      bestStreak,
+      weeklyActivity,
+      totalCompletions,
+      masteryLevel
+    };
+  }, [challenges, logs]);
+
   return {
     challenges,
+    logs,
+    stats,
     isLoaded,
     user,
     signInWithGoogle,
