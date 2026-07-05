@@ -89,7 +89,7 @@ export async function POST(req: Request) {
         nextTask: data.nextTask,
         estimatedDays: data.estimatedDays
       });
-    } catch (_parseError) {
+    } catch {
       console.error('Failed to parse AI JSON:', content);
       // Fallback for malformed JSON but containing text
       return NextResponse.json({
