@@ -5,18 +5,18 @@
 ▲ Next.js 16.2.10 (Turbopack)
 - Local:         http://localhost:3000
 - Network:       http://192.168.0.2:3000
-✓ Ready in 549ms
+✓ Ready in 491ms
 - Experiments (use with caution):
   · clientTraceMetadata
 
 ○ Compiling / ...
 ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
- GET / 200 in 9.6s (next.js: 8.2s, proxy.ts: 322ms, application-code: 1050ms)
+ GET / 200 in 8.7s (next.js: 7.4s, proxy.ts: 284ms, application-code: 974ms)
 [browser] ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
     at createClient (src/lib/supabase/client.ts:8:13)
-    at useOnePercent.useState (src/hooks/useOnePercent.ts:72:49)
-    at useOnePercent (src/hooks/useOnePercent.ts:72:30)
-    at Home (src/app/page.tsx:27:20)
+    at useOnePercent.useState (src/hooks/useOnePercent.ts:83:49)
+    at useOnePercent (src/hooks/useOnePercent.ts:83:30)
+    at Home (src/app/page.tsx:29:20)
    6 |
    7 |   if (process.env.NODE_ENV === 'development' && (!supabaseUrl || !supabaseAnonKey)) {
 >  8 |     console.error(
@@ -26,20 +26,8 @@ ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El ini
   11 |       'Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.' (src/lib/supabase/client.ts:8:13)
 [browser] ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
     at createClient (src/lib/supabase/client.ts:8:13)
-    at useOnePercent.useState (src/hooks/useOnePercent.ts:72:49)
-    at useOnePercent (src/hooks/useOnePercent.ts:72:30)
-    at Home (src/app/page.tsx:27:20)
-   6 |
-   7 |   if (process.env.NODE_ENV === 'development' && (!supabaseUrl || !supabaseAnonKey)) {
->  8 |     console.error(
-     |             ^
-   9 |       'ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. ' +
-  10 |       'El inicio de sesión y la base de datos no funcionarán correctamente. ' +
-  11 |       'Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.' (src/lib/supabase/client.ts:8:13)
-[browser] ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
-    at createClient (src/lib/supabase/client.ts:8:13)
-    at useOnePercent.useState (src/hooks/useOnePercent.ts:72:49)
-    at useOnePercent (src/hooks/useOnePercent.ts:72:30)
+    at useOnePercent.useState (src/hooks/useOnePercent.ts:83:49)
+    at useOnePercent (src/hooks/useOnePercent.ts:83:30)
     at AuthModal (src/components/auth/AuthModal.tsx:15:62)
    6 |
    7 |   if (process.env.NODE_ENV === 'development' && (!supabaseUrl || !supabaseAnonKey)) {
@@ -50,23 +38,9 @@ ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El ini
   11 |       'Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.' (src/lib/supabase/client.ts:8:13)
 [browser] ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
     at createClient (src/lib/supabase/client.ts:8:13)
-    at useOnePercent.useState (src/hooks/useOnePercent.ts:72:49)
-    at useOnePercent (src/hooks/useOnePercent.ts:72:30)
-    at AuthModal (src/components/auth/AuthModal.tsx:15:62)
-   6 |
-   7 |   if (process.env.NODE_ENV === 'development' && (!supabaseUrl || !supabaseAnonKey)) {
->  8 |     console.error(
-     |             ^
-   9 |       'ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. ' +
-  10 |       'El inicio de sesión y la base de datos no funcionarán correctamente. ' +
-  11 |       'Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.' (src/lib/supabase/client.ts:8:13)
-ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
- GET / 200 in 88ms (next.js: 7ms, proxy.ts: 8ms, application-code: 72ms)
-[browser] ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
-    at createClient (src/lib/supabase/client.ts:8:13)
-    at useOnePercent.useState (src/hooks/useOnePercent.ts:72:49)
-    at useOnePercent (src/hooks/useOnePercent.ts:72:30)
-    at Home (src/app/page.tsx:27:20)
+    at useOnePercent.useState (src/hooks/useOnePercent.ts:83:49)
+    at useOnePercent (src/hooks/useOnePercent.ts:83:30)
+    at Home (src/app/page.tsx:29:20)
    6 |
    7 |   if (process.env.NODE_ENV === 'development' && (!supabaseUrl || !supabaseAnonKey)) {
 >  8 |     console.error(
@@ -76,66 +50,8 @@ ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El ini
   11 |       'Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.' (src/lib/supabase/client.ts:8:13)
 [browser] ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
     at createClient (src/lib/supabase/client.ts:8:13)
-    at useOnePercent.useState (src/hooks/useOnePercent.ts:72:49)
-    at useOnePercent (src/hooks/useOnePercent.ts:72:30)
-    at Home (src/app/page.tsx:27:20)
-   6 |
-   7 |   if (process.env.NODE_ENV === 'development' && (!supabaseUrl || !supabaseAnonKey)) {
->  8 |     console.error(
-     |             ^
-   9 |       'ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. ' +
-  10 |       'El inicio de sesión y la base de datos no funcionarán correctamente. ' +
-  11 |       'Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.' (src/lib/supabase/client.ts:8:13)
-[browser] ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
-    at createClient (src/lib/supabase/client.ts:8:13)
-    at useOnePercent.useState (src/hooks/useOnePercent.ts:72:49)
-    at useOnePercent (src/hooks/useOnePercent.ts:72:30)
-    at AuthModal (src/components/auth/AuthModal.tsx:15:62)
-   6 |
-   7 |   if (process.env.NODE_ENV === 'development' && (!supabaseUrl || !supabaseAnonKey)) {
->  8 |     console.error(
-     |             ^
-   9 |       'ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. ' +
-  10 |       'El inicio de sesión y la base de datos no funcionarán correctamente. ' +
-  11 |       'Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.' (src/lib/supabase/client.ts:8:13)
-[browser] ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
-    at createClient (src/lib/supabase/client.ts:8:13)
-    at useOnePercent.useState (src/hooks/useOnePercent.ts:72:49)
-    at useOnePercent (src/hooks/useOnePercent.ts:72:30)
-    at AuthModal (src/components/auth/AuthModal.tsx:15:62)
-   6 |
-   7 |   if (process.env.NODE_ENV === 'development' && (!supabaseUrl || !supabaseAnonKey)) {
->  8 |     console.error(
-     |             ^
-   9 |       'ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. ' +
-  10 |       'El inicio de sesión y la base de datos no funcionarán correctamente. ' +
-  11 |       'Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.' (src/lib/supabase/client.ts:8:13)
-AI Generation Error: Error: The OPENAI_API_KEY environment variable is missing or empty; either provide it, or instantiate the OpenAI client with an apiKey option, like new OpenAI({ apiKey: 'My API Key' }).
-    at POST (src/app/api/ai/generate-task/route.ts:8:20)
-   6 | export async function POST(req: Request) {
-   7 |   try {
->  8 |     const openai = new OpenAI({
-     |                    ^
-   9 |       apiKey: process.env.OPENAI_API_KEY,
-  10 |     });
-  11 |
- POST /api/ai/generate-task 500 in 1384ms (next.js: 1036ms, proxy.ts: 8ms, application-code: 340ms)
-[browser] ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
-    at createClient (src/lib/supabase/client.ts:8:13)
-    at useOnePercent.useState (src/hooks/useOnePercent.ts:72:49)
-    at useOnePercent (src/hooks/useOnePercent.ts:72:30)
-    at AuthModal (src/components/auth/AuthModal.tsx:15:62)
-   6 |
-   7 |   if (process.env.NODE_ENV === 'development' && (!supabaseUrl || !supabaseAnonKey)) {
->  8 |     console.error(
-     |             ^
-   9 |       'ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. ' +
-  10 |       'El inicio de sesión y la base de datos no funcionarán correctamente. ' +
-  11 |       'Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.' (src/lib/supabase/client.ts:8:13)
-[browser] ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
-    at createClient (src/lib/supabase/client.ts:8:13)
-    at useOnePercent.useState (src/hooks/useOnePercent.ts:72:49)
-    at useOnePercent (src/hooks/useOnePercent.ts:72:30)
+    at useOnePercent.useState (src/hooks/useOnePercent.ts:83:49)
+    at useOnePercent (src/hooks/useOnePercent.ts:83:30)
     at AuthModal (src/components/auth/AuthModal.tsx:15:62)
    6 |
    7 |   if (process.env.NODE_ENV === 'development' && (!supabaseUrl || !supabaseAnonKey)) {
@@ -145,12 +61,12 @@ AI Generation Error: Error: The OPENAI_API_KEY environment variable is missing o
   10 |       'El inicio de sesión y la base de datos no funcionarán correctamente. ' +
   11 |       'Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.' (src/lib/supabase/client.ts:8:13)
 ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
- GET / 200 in 85ms (next.js: 7ms, proxy.ts: 10ms, application-code: 68ms)
+ GET / 200 in 80ms (next.js: 7ms, proxy.ts: 7ms, application-code: 66ms)
 [browser] ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
     at createClient (src/lib/supabase/client.ts:8:13)
-    at useOnePercent.useState (src/hooks/useOnePercent.ts:72:49)
-    at useOnePercent (src/hooks/useOnePercent.ts:72:30)
-    at Home (src/app/page.tsx:27:20)
+    at useOnePercent.useState (src/hooks/useOnePercent.ts:83:49)
+    at useOnePercent (src/hooks/useOnePercent.ts:83:30)
+    at Home (src/app/page.tsx:29:20)
    6 |
    7 |   if (process.env.NODE_ENV === 'development' && (!supabaseUrl || !supabaseAnonKey)) {
 >  8 |     console.error(
@@ -160,9 +76,9 @@ ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El ini
   11 |       'Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.' (src/lib/supabase/client.ts:8:13)
 [browser] ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
     at createClient (src/lib/supabase/client.ts:8:13)
-    at useOnePercent.useState (src/hooks/useOnePercent.ts:72:49)
-    at useOnePercent (src/hooks/useOnePercent.ts:72:30)
-    at Home (src/app/page.tsx:27:20)
+    at useOnePercent.useState (src/hooks/useOnePercent.ts:83:49)
+    at useOnePercent (src/hooks/useOnePercent.ts:83:30)
+    at Home (src/app/page.tsx:29:20)
    6 |
    7 |   if (process.env.NODE_ENV === 'development' && (!supabaseUrl || !supabaseAnonKey)) {
 >  8 |     console.error(
@@ -172,8 +88,8 @@ ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El ini
   11 |       'Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.' (src/lib/supabase/client.ts:8:13)
 [browser] ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
     at createClient (src/lib/supabase/client.ts:8:13)
-    at useOnePercent.useState (src/hooks/useOnePercent.ts:72:49)
-    at useOnePercent (src/hooks/useOnePercent.ts:72:30)
+    at useOnePercent.useState (src/hooks/useOnePercent.ts:83:49)
+    at useOnePercent (src/hooks/useOnePercent.ts:83:30)
     at AuthModal (src/components/auth/AuthModal.tsx:15:62)
    6 |
    7 |   if (process.env.NODE_ENV === 'development' && (!supabaseUrl || !supabaseAnonKey)) {
@@ -184,8 +100,232 @@ ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El ini
   11 |       'Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.' (src/lib/supabase/client.ts:8:13)
 [browser] ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
     at createClient (src/lib/supabase/client.ts:8:13)
-    at useOnePercent.useState (src/hooks/useOnePercent.ts:72:49)
-    at useOnePercent (src/hooks/useOnePercent.ts:72:30)
+    at useOnePercent.useState (src/hooks/useOnePercent.ts:83:49)
+    at useOnePercent (src/hooks/useOnePercent.ts:83:30)
+    at AuthModal (src/components/auth/AuthModal.tsx:15:62)
+   6 |
+   7 |   if (process.env.NODE_ENV === 'development' && (!supabaseUrl || !supabaseAnonKey)) {
+>  8 |     console.error(
+     |             ^
+   9 |       'ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. ' +
+  10 |       'El inicio de sesión y la base de datos no funcionarán correctamente. ' +
+  11 |       'Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.' (src/lib/supabase/client.ts:8:13)
+ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
+ GET / 200 in 73ms (next.js: 5ms, proxy.ts: 6ms, application-code: 62ms)
+[browser] ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
+    at createClient (src/lib/supabase/client.ts:8:13)
+    at useOnePercent.useState (src/hooks/useOnePercent.ts:83:49)
+    at useOnePercent (src/hooks/useOnePercent.ts:83:30)
+    at Home (src/app/page.tsx:29:20)
+   6 |
+   7 |   if (process.env.NODE_ENV === 'development' && (!supabaseUrl || !supabaseAnonKey)) {
+>  8 |     console.error(
+     |             ^
+   9 |       'ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. ' +
+  10 |       'El inicio de sesión y la base de datos no funcionarán correctamente. ' +
+  11 |       'Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.' (src/lib/supabase/client.ts:8:13)
+[browser] ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
+    at createClient (src/lib/supabase/client.ts:8:13)
+    at useOnePercent.useState (src/hooks/useOnePercent.ts:83:49)
+    at useOnePercent (src/hooks/useOnePercent.ts:83:30)
+    at Home (src/app/page.tsx:29:20)
+   6 |
+   7 |   if (process.env.NODE_ENV === 'development' && (!supabaseUrl || !supabaseAnonKey)) {
+>  8 |     console.error(
+     |             ^
+   9 |       'ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. ' +
+  10 |       'El inicio de sesión y la base de datos no funcionarán correctamente. ' +
+  11 |       'Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.' (src/lib/supabase/client.ts:8:13)
+[browser] ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
+    at createClient (src/lib/supabase/client.ts:8:13)
+    at useOnePercent.useState (src/hooks/useOnePercent.ts:83:49)
+    at useOnePercent (src/hooks/useOnePercent.ts:83:30)
+    at AuthModal (src/components/auth/AuthModal.tsx:15:62)
+   6 |
+   7 |   if (process.env.NODE_ENV === 'development' && (!supabaseUrl || !supabaseAnonKey)) {
+>  8 |     console.error(
+     |             ^
+   9 |       'ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. ' +
+  10 |       'El inicio de sesión y la base de datos no funcionarán correctamente. ' +
+  11 |       'Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.' (src/lib/supabase/client.ts:8:13)
+[browser] ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
+    at createClient (src/lib/supabase/client.ts:8:13)
+    at useOnePercent.useState (src/hooks/useOnePercent.ts:83:49)
+    at useOnePercent (src/hooks/useOnePercent.ts:83:30)
+    at AuthModal (src/components/auth/AuthModal.tsx:15:62)
+   6 |
+   7 |   if (process.env.NODE_ENV === 'development' && (!supabaseUrl || !supabaseAnonKey)) {
+>  8 |     console.error(
+     |             ^
+   9 |       'ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. ' +
+  10 |       'El inicio de sesión y la base de datos no funcionarán correctamente. ' +
+  11 |       'Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.' (src/lib/supabase/client.ts:8:13)
+ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
+ GET / 200 in 68ms (next.js: 4ms, proxy.ts: 5ms, application-code: 59ms)
+[browser] ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
+    at createClient (src/lib/supabase/client.ts:8:13)
+    at useOnePercent.useState (src/hooks/useOnePercent.ts:83:49)
+    at useOnePercent (src/hooks/useOnePercent.ts:83:30)
+    at Home (src/app/page.tsx:29:20)
+   6 |
+   7 |   if (process.env.NODE_ENV === 'development' && (!supabaseUrl || !supabaseAnonKey)) {
+>  8 |     console.error(
+     |             ^
+   9 |       'ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. ' +
+  10 |       'El inicio de sesión y la base de datos no funcionarán correctamente. ' +
+  11 |       'Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.' (src/lib/supabase/client.ts:8:13)
+[browser] ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
+    at createClient (src/lib/supabase/client.ts:8:13)
+    at useOnePercent.useState (src/hooks/useOnePercent.ts:83:49)
+    at useOnePercent (src/hooks/useOnePercent.ts:83:30)
+    at Home (src/app/page.tsx:29:20)
+   6 |
+   7 |   if (process.env.NODE_ENV === 'development' && (!supabaseUrl || !supabaseAnonKey)) {
+>  8 |     console.error(
+     |             ^
+   9 |       'ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. ' +
+  10 |       'El inicio de sesión y la base de datos no funcionarán correctamente. ' +
+  11 |       'Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.' (src/lib/supabase/client.ts:8:13)
+[browser] ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
+    at createClient (src/lib/supabase/client.ts:8:13)
+    at useOnePercent.useState (src/hooks/useOnePercent.ts:83:49)
+    at useOnePercent (src/hooks/useOnePercent.ts:83:30)
+    at AuthModal (src/components/auth/AuthModal.tsx:15:62)
+   6 |
+   7 |   if (process.env.NODE_ENV === 'development' && (!supabaseUrl || !supabaseAnonKey)) {
+>  8 |     console.error(
+     |             ^
+   9 |       'ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. ' +
+  10 |       'El inicio de sesión y la base de datos no funcionarán correctamente. ' +
+  11 |       'Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.' (src/lib/supabase/client.ts:8:13)
+[browser] ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
+    at createClient (src/lib/supabase/client.ts:8:13)
+    at useOnePercent.useState (src/hooks/useOnePercent.ts:83:49)
+    at useOnePercent (src/hooks/useOnePercent.ts:83:30)
+    at AuthModal (src/components/auth/AuthModal.tsx:15:62)
+   6 |
+   7 |   if (process.env.NODE_ENV === 'development' && (!supabaseUrl || !supabaseAnonKey)) {
+>  8 |     console.error(
+     |             ^
+   9 |       'ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. ' +
+  10 |       'El inicio de sesión y la base de datos no funcionarán correctamente. ' +
+  11 |       'Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.' (src/lib/supabase/client.ts:8:13)
+ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
+ GET / 200 in 66ms (next.js: 4ms, proxy.ts: 7ms, application-code: 55ms)
+[browser] ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
+    at createClient (src/lib/supabase/client.ts:8:13)
+    at useOnePercent.useState (src/hooks/useOnePercent.ts:83:49)
+    at useOnePercent (src/hooks/useOnePercent.ts:83:30)
+    at Home (src/app/page.tsx:29:20)
+   6 |
+   7 |   if (process.env.NODE_ENV === 'development' && (!supabaseUrl || !supabaseAnonKey)) {
+>  8 |     console.error(
+     |             ^
+   9 |       'ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. ' +
+  10 |       'El inicio de sesión y la base de datos no funcionarán correctamente. ' +
+  11 |       'Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.' (src/lib/supabase/client.ts:8:13)
+[browser] ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
+    at createClient (src/lib/supabase/client.ts:8:13)
+    at useOnePercent.useState (src/hooks/useOnePercent.ts:83:49)
+    at useOnePercent (src/hooks/useOnePercent.ts:83:30)
+    at Home (src/app/page.tsx:29:20)
+   6 |
+   7 |   if (process.env.NODE_ENV === 'development' && (!supabaseUrl || !supabaseAnonKey)) {
+>  8 |     console.error(
+     |             ^
+   9 |       'ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. ' +
+  10 |       'El inicio de sesión y la base de datos no funcionarán correctamente. ' +
+  11 |       'Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.' (src/lib/supabase/client.ts:8:13)
+[browser] ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
+    at createClient (src/lib/supabase/client.ts:8:13)
+    at useOnePercent.useState (src/hooks/useOnePercent.ts:83:49)
+    at useOnePercent (src/hooks/useOnePercent.ts:83:30)
+    at AuthModal (src/components/auth/AuthModal.tsx:15:62)
+   6 |
+   7 |   if (process.env.NODE_ENV === 'development' && (!supabaseUrl || !supabaseAnonKey)) {
+>  8 |     console.error(
+     |             ^
+   9 |       'ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. ' +
+  10 |       'El inicio de sesión y la base de datos no funcionarán correctamente. ' +
+  11 |       'Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.' (src/lib/supabase/client.ts:8:13)
+[browser] ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
+    at createClient (src/lib/supabase/client.ts:8:13)
+    at useOnePercent.useState (src/hooks/useOnePercent.ts:83:49)
+    at useOnePercent (src/hooks/useOnePercent.ts:83:30)
+    at AuthModal (src/components/auth/AuthModal.tsx:15:62)
+   6 |
+   7 |   if (process.env.NODE_ENV === 'development' && (!supabaseUrl || !supabaseAnonKey)) {
+>  8 |     console.error(
+     |             ^
+   9 |       'ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. ' +
+  10 |       'El inicio de sesión y la base de datos no funcionarán correctamente. ' +
+  11 |       'Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.' (src/lib/supabase/client.ts:8:13)
+ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
+ GET / 200 in 64ms (next.js: 3ms, proxy.ts: 7ms, application-code: 53ms)
+[browser] ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
+    at createClient (src/lib/supabase/client.ts:8:13)
+    at useOnePercent.useState (src/hooks/useOnePercent.ts:83:49)
+    at useOnePercent (src/hooks/useOnePercent.ts:83:30)
+    at Home (src/app/page.tsx:29:20)
+   6 |
+   7 |   if (process.env.NODE_ENV === 'development' && (!supabaseUrl || !supabaseAnonKey)) {
+>  8 |     console.error(
+     |             ^
+   9 |       'ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. ' +
+  10 |       'El inicio de sesión y la base de datos no funcionarán correctamente. ' +
+  11 |       'Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.' (src/lib/supabase/client.ts:8:13)
+[browser] ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
+    at createClient (src/lib/supabase/client.ts:8:13)
+    at useOnePercent.useState (src/hooks/useOnePercent.ts:83:49)
+    at useOnePercent (src/hooks/useOnePercent.ts:83:30)
+    at Home (src/app/page.tsx:29:20)
+   6 |
+   7 |   if (process.env.NODE_ENV === 'development' && (!supabaseUrl || !supabaseAnonKey)) {
+>  8 |     console.error(
+     |             ^
+   9 |       'ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. ' +
+  10 |       'El inicio de sesión y la base de datos no funcionarán correctamente. ' +
+  11 |       'Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.' (src/lib/supabase/client.ts:8:13)
+[browser] ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
+    at createClient (src/lib/supabase/client.ts:8:13)
+    at useOnePercent.useState (src/hooks/useOnePercent.ts:83:49)
+    at useOnePercent (src/hooks/useOnePercent.ts:83:30)
+    at AuthModal (src/components/auth/AuthModal.tsx:15:62)
+   6 |
+   7 |   if (process.env.NODE_ENV === 'development' && (!supabaseUrl || !supabaseAnonKey)) {
+>  8 |     console.error(
+     |             ^
+   9 |       'ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. ' +
+  10 |       'El inicio de sesión y la base de datos no funcionarán correctamente. ' +
+  11 |       'Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.' (src/lib/supabase/client.ts:8:13)
+[browser] ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
+    at createClient (src/lib/supabase/client.ts:8:13)
+    at useOnePercent.useState (src/hooks/useOnePercent.ts:83:49)
+    at useOnePercent (src/hooks/useOnePercent.ts:83:30)
+    at AuthModal (src/components/auth/AuthModal.tsx:15:62)
+   6 |
+   7 |   if (process.env.NODE_ENV === 'development' && (!supabaseUrl || !supabaseAnonKey)) {
+>  8 |     console.error(
+     |             ^
+   9 |       'ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. ' +
+  10 |       'El inicio de sesión y la base de datos no funcionarán correctamente. ' +
+  11 |       'Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.' (src/lib/supabase/client.ts:8:13)
+[browser] ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
+    at createClient (src/lib/supabase/client.ts:8:13)
+    at useOnePercent.useState (src/hooks/useOnePercent.ts:83:49)
+    at useOnePercent (src/hooks/useOnePercent.ts:83:30)
+    at AuthModal (src/components/auth/AuthModal.tsx:15:62)
+   6 |
+   7 |   if (process.env.NODE_ENV === 'development' && (!supabaseUrl || !supabaseAnonKey)) {
+>  8 |     console.error(
+     |             ^
+   9 |       'ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. ' +
+  10 |       'El inicio de sesión y la base de datos no funcionarán correctamente. ' +
+  11 |       'Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.' (src/lib/supabase/client.ts:8:13)
+[browser] ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
+    at createClient (src/lib/supabase/client.ts:8:13)
+    at useOnePercent.useState (src/hooks/useOnePercent.ts:83:49)
+    at useOnePercent (src/hooks/useOnePercent.ts:83:30)
     at AuthModal (src/components/auth/AuthModal.tsx:15:62)
    6 |
    7 |   if (process.env.NODE_ENV === 'development' && (!supabaseUrl || !supabaseAnonKey)) {
@@ -203,31 +343,7 @@ AI Generation Error: Error: The OPENAI_API_KEY environment variable is missing o
    9 |       apiKey: process.env.OPENAI_API_KEY,
   10 |     });
   11 |
- POST /api/ai/generate-task 500 in 218ms (next.js: 4ms, proxy.ts: 10ms, application-code: 204ms)
-[browser] ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
-    at createClient (src/lib/supabase/client.ts:8:13)
-    at useOnePercent.useState (src/hooks/useOnePercent.ts:72:49)
-    at useOnePercent (src/hooks/useOnePercent.ts:72:30)
-    at AuthModal (src/components/auth/AuthModal.tsx:15:62)
-   6 |
-   7 |   if (process.env.NODE_ENV === 'development' && (!supabaseUrl || !supabaseAnonKey)) {
->  8 |     console.error(
-     |             ^
-   9 |       'ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. ' +
-  10 |       'El inicio de sesión y la base de datos no funcionarán correctamente. ' +
-  11 |       'Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.' (src/lib/supabase/client.ts:8:13)
-[browser] ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. El inicio de sesión y la base de datos no funcionarán correctamente. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.
-    at createClient (src/lib/supabase/client.ts:8:13)
-    at useOnePercent.useState (src/hooks/useOnePercent.ts:72:49)
-    at useOnePercent (src/hooks/useOnePercent.ts:72:30)
-    at AuthModal (src/components/auth/AuthModal.tsx:15:62)
-   6 |
-   7 |   if (process.env.NODE_ENV === 'development' && (!supabaseUrl || !supabaseAnonKey)) {
->  8 |     console.error(
-     |             ^
-   9 |       'ADVERTENCIA: Las variables de entorno de Supabase no están configuradas. ' +
-  10 |       'El inicio de sesión y la base de datos no funcionarán correctamente. ' +
-  11 |       'Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY.' (src/lib/supabase/client.ts:8:13)
+ POST /api/ai/generate-task 500 in 2.1s (next.js: 1756ms, proxy.ts: 27ms, application-code: 338ms)
 AI Generation Error: Error: The OPENAI_API_KEY environment variable is missing or empty; either provide it, or instantiate the OpenAI client with an apiKey option, like new OpenAI({ apiKey: 'My API Key' }).
     at POST (src/app/api/ai/generate-task/route.ts:8:20)
    6 | export async function POST(req: Request) {
@@ -237,4 +353,4 @@ AI Generation Error: Error: The OPENAI_API_KEY environment variable is missing o
    9 |       apiKey: process.env.OPENAI_API_KEY,
   10 |     });
   11 |
- POST /api/ai/generate-task 500 in 173ms (next.js: 12ms, proxy.ts: 8ms, application-code: 152ms)
+ POST /api/ai/generate-task 500 in 166ms (next.js: 3ms, proxy.ts: 6ms, application-code: 156ms)
