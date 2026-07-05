@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import { Button } from '../ui/Button';
-import { Zap, BarChart3, Info } from 'lucide-react';
+import { Zap, BarChart3, Info, Clock, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface NewChallengeFormProps {
@@ -36,6 +37,21 @@ export function NewChallengeForm({ onSubmit, onCancel }: NewChallengeFormProps) 
   const [type, setType] = useState<'quantitative' | 'qualitative'>('quantitative');
   const [frequency, setFrequency] = useState<number[]>([0, 1, 2, 3, 4, 5, 6]);
   const [initialContext, setInitialContext] = useState('');
+
+  const estimatedDays = useMemo(() => {
+    if (type === 'qualitative') return null;
+    const current = Number(metric);
+    const target = Number(targetMetric);
+    if (!current || !target || target <= current) return null;
+
+    // Formula for compound growth: target = current * (1.01)^n
+    // n = log(target/current) / log(1.01)
+    const days = Math.log(target / current) / Math.log(1.01);
+    const roundedDays = Math.ceil(days);
+
+    if (roundedDays > 365) return "un año o más";
+    return roundedDays;
+  }, [metric, targetMetric, type]);
 
   const toggleDay = (day: number) => {
     setFrequency(prev =>
@@ -192,6 +208,19 @@ export function NewChallengeForm({ onSubmit, onCancel }: NewChallengeFormProps) 
               className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
             />
           </div>
+
+          {estimatedDays && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              className="col-span-2 flex items-center gap-2 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400"
+            >
+              <Clock className="w-5 h-5" />
+              <div className="text-sm font-bold uppercase tracking-tight">
+                Tiempo estimado: <span className="text-white ml-1">{estimatedDays} {!isNaN(Number(estimatedDays)) ? 'días' : ''}</span>
+              </div>
+            </motion.div>
+          )}
         </div>
       ) : (
         <div className="space-y-4">
@@ -238,7 +267,13 @@ export function NewChallengeForm({ onSubmit, onCancel }: NewChallengeFormProps) 
 
           <div className="flex items-start gap-3 p-4 rounded-xl bg-purple-500/5 border border-purple-500/10 text-xs text-purple-300/80 leading-relaxed">
             <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
-            <p>La IA generará tareas un 1% más desafiantes cada día basadas en tu objetivo y punto de partida. No necesitas métricas numéricas.</p>
+            <div>
+              <p className="mb-2">La IA generará tareas un 1% más desafiantes cada día basadas en tu objetivo y punto de partida.</p>
+              <div className="flex items-center gap-1.5 text-purple-400 font-bold uppercase tracking-tight">
+                <Calendar className="w-3.5 h-3.5" />
+                La IA estimará el tiempo para tu meta
+              </div>
+            </div>
           </div>
         </div>
       )}

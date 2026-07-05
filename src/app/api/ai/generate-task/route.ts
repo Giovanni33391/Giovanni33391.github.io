@@ -24,7 +24,7 @@ export async function POST(req: Request) {
       Por favor, genera la SIGUIENTE tarea específica para mañana que represente un incremento del 1% respecto al progreso actual.
       Es MUY IMPORTANTE que la tarea NO sea repetitiva. Debe ser creativa, variada y ofrecer un nuevo ángulo o desafío pequeño relacionado con el hábito para mantener el interés.
 
-      Además, si se proporciona una meta final, estima cuántos días de consistencia (mejora diaria del 1%) faltan para alcanzarla razonablemente. Si el tiempo estimado es superior a 365 días, simplemente indica "un año o más".
+      Además, si se proporciona una meta final, estima cuántos días de consistencia (mejora diaria del 1%) faltan para alcanzarla razonablemente desde el punto de partida actual. Se realista: si la meta es muy ambiciosa, el tiempo debe reflejarlo. Si el tiempo estimado es superior a 365 días, simplemente indica "un año o más".
 
       La tarea debe ser:
       1. Concreta y accionable.

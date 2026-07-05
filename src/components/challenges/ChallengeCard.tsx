@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle2, Flame, TrendingUp, Trash2, Zap, Sparkles, Target } from 'lucide-react';
+import { CheckCircle2, Flame, TrendingUp, Trash2, Zap, Sparkles, Clock, Calendar } from 'lucide-react';
 import { Area, AreaChart, ResponsiveContainer } from 'recharts';
 import confetti from 'canvas-confetti';
 import { Challenge } from '@/types';
@@ -124,9 +124,10 @@ export function ChallengeCard({ challenge, onComplete, onDelete, isToday }: Chal
               {challenge.nextTask || 'Generando tu próximo desafío...'}
             </p>
             {daysToTarget && (
-              <div className="mt-3 flex items-center gap-1.5 text-[10px] font-bold text-purple-400/80 uppercase tracking-wider">
-                <Sparkles className="w-3 h-3" />
-                Faltan aprox. {daysToTarget} {!isNaN(Number(daysToTarget)) ? 'días' : ''}
+              <div className="mt-4 flex items-center gap-2 p-2.5 rounded-lg bg-purple-500/10 border border-purple-500/20 text-xs font-bold text-purple-400 uppercase tracking-tight">
+                <Calendar className="w-4 h-4" />
+                <span>Tiempo restante:</span>
+                <span className="text-white ml-auto">{daysToTarget} {!isNaN(Number(daysToTarget)) ? 'días' : ''}</span>
               </div>
             )}
           </div>
@@ -141,9 +142,10 @@ export function ChallengeCard({ challenge, onComplete, onDelete, isToday }: Chal
                 <span className="text-zinc-500 font-medium">{challenge.unit}</span>
               </div>
               {daysToTarget && (
-                <div className="mt-1 flex items-center gap-1 text-[10px] font-bold text-emerald-500/80 uppercase tracking-wider">
-                  <Target className="w-3 h-3" />
-                  Meta: {challenge.targetMetric} — Faltan {daysToTarget} {!isNaN(Number(daysToTarget)) ? 'días' : ''}
+                <div className="mt-3 flex items-center gap-2 p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs font-bold text-emerald-400 uppercase tracking-tight">
+                  <Clock className="w-4 h-4" />
+                  <span>Tiempo restante:</span>
+                  <span className="text-white ml-auto">{daysToTarget} {!isNaN(Number(daysToTarget)) ? 'días' : ''}</span>
                 </div>
               )}
             </div>
