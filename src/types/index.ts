@@ -4,6 +4,9 @@ export interface Challenge {
   type: 'quantitative' | 'qualitative';
   initialMetric: number;
   currentMetric: number;
+  targetMetric?: number; // Target for quantitative
+  targetGoal?: string; // Target for qualitative
+  estimatedDays?: string | number | null; // AI estimate
   unit: string;
   streak: number;
   nextTask?: string; // AI generated next step for qualitative habits

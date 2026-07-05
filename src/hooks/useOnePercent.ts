@@ -19,7 +19,7 @@ export interface ChallengeLog {
 // Define a type for pending sync actions instead of using any
 type PendingAction = 
   | { type: 'INSERT'; data: Challenge }
-  | { type: 'UPDATE'; data: { id: string; streak: number; currentMetric: number; lastCompletedDate: string; nextTask?: string; initialContext?: string } }
+  | { type: 'UPDATE'; data: { id: string; streak: number; currentMetric: number; lastCompletedDate: string; nextTask?: string; initialContext?: string, estimatedDays?: string | number | null } }
   | { type: 'DELETE'; data: { id: string } };
 
 // Helper to check if a date string is today
@@ -135,6 +135,9 @@ export function useOnePercent() {
             last_completed_date: action.data.lastCompletedDate,
             next_task: action.data.nextTask,
             initial_context: action.data.initialContext,
+            target_metric: action.data.targetMetric,
+            target_goal: action.data.targetGoal,
+            estimated_days: action.data.estimatedDays?.toString(),
             frequency: action.data.frequency,
           });
           if (error) remainingActions.push(action);
@@ -144,6 +147,7 @@ export function useOnePercent() {
              current_metric: action.data.currentMetric,
              last_completed_date: action.data.lastCompletedDate,
              next_task: action.data.nextTask,
+             estimated_days: action.data.estimatedDays?.toString(),
            }).eq('id', action.data.id);
 
            if (!error) {
@@ -208,6 +212,9 @@ export function useOnePercent() {
               type: dbChallenge.type || 'quantitative',
               initialMetric: dbChallenge.initial_metric,
               currentMetric: dbChallenge.current_metric,
+              targetMetric: dbChallenge.target_metric,
+              targetGoal: dbChallenge.target_goal,
+              estimatedDays: dbChallenge.estimated_days,
               unit: dbChallenge.unit,
               streak: dbChallenge.streak,
               nextTask: dbChallenge.next_task,
@@ -246,15 +253,15 @@ export function useOnePercent() {
   }, [challenges, logs, isLoaded]);
 
   // AI Task Generation Helper
-  const fetchNextAITask = async (challengeName: string, streak: number, unit: string, lastTask?: string, initialContext?: string) => {
+  const fetchNextAITask = async (challengeName: string, streak: number, unit: string, lastTask?: string, initialContext?: string, targetGoal?: string) => {
     try {
       const response = await fetch('/api/ai/generate-task', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ challengeName, streak, unit, lastTask, initialContext }),
+        body: JSON.stringify({ challengeName, streak, unit, lastTask, initialContext, targetGoal }),
       });
       const data = await response.json();
-      return data.nextTask;
+      return { nextTask: data.nextTask, estimatedDays: data.estimatedDays };
     } catch (err) {
       console.error('Failed to fetch AI task:', err);
       return null;
@@ -291,10 +298,23 @@ export function useOnePercent() {
   };
 
   // Actions
-  const addChallenge = useCallback(async (name: string, initialMetric: number, unit: string, type: 'quantitative' | 'qualitative' = 'quantitative', frequency: number[] = [0, 1, 2, 3, 4, 5, 6], initialContext?: string) => {
+  const addChallenge = useCallback(async (
+    name: string,
+    initialMetric: number,
+    unit: string,
+    type: 'quantitative' | 'qualitative' = 'quantitative',
+    frequency: number[] = [0, 1, 2, 3, 4, 5, 6],
+    initialContext?: string,
+    targetMetric?: number,
+    targetGoal?: string
+  ) => {
     let nextTask = undefined;
+    let estimatedDays = undefined;
+
     if (type === 'qualitative') {
-      nextTask = await fetchNextAITask(name, 0, unit, undefined, initialContext);
+      const aiData = await fetchNextAITask(name, 0, unit, undefined, initialContext, targetGoal);
+      nextTask = aiData?.nextTask;
+      estimatedDays = aiData?.estimatedDays;
       if (!nextTask) {
         nextTask = getBetterFallback(name, 0);
       }
@@ -306,6 +326,9 @@ export function useOnePercent() {
       type,
       initialMetric,
       currentMetric: initialMetric,
+      targetMetric,
+      targetGoal,
+      estimatedDays,
       unit,
       streak: 0,
       nextTask,
@@ -331,6 +354,9 @@ export function useOnePercent() {
         last_completed_date: newChallenge.lastCompletedDate,
         next_task: newChallenge.nextTask,
         initial_context: newChallenge.initialContext,
+        target_metric: newChallenge.targetMetric,
+        target_goal: newChallenge.targetGoal,
+        estimated_days: newChallenge.estimatedDays?.toString(),
         frequency: newChallenge.frequency,
       }).select().single();
 
@@ -351,8 +377,20 @@ export function useOnePercent() {
     const now = new Date().toISOString();
 
     let nextTask = challengeToUpdate.nextTask;
+    let estimatedDays = challengeToUpdate.estimatedDays;
+
     if (challengeToUpdate.type === 'qualitative') {
-      nextTask = await fetchNextAITask(challengeToUpdate.name, newStreak, challengeToUpdate.unit, challengeToUpdate.nextTask, challengeToUpdate.initialContext);
+      const aiData = await fetchNextAITask(
+        challengeToUpdate.name,
+        newStreak,
+        challengeToUpdate.unit,
+        challengeToUpdate.nextTask,
+        challengeToUpdate.initialContext,
+        challengeToUpdate.targetGoal
+      );
+      nextTask = aiData?.nextTask;
+      estimatedDays = aiData?.estimatedDays;
+
       if (!nextTask) {
         nextTask = getBetterFallback(challengeToUpdate.name, newStreak);
       }
@@ -366,7 +404,8 @@ export function useOnePercent() {
           streak: newStreak,
           currentMetric: nextMetric,
           lastCompletedDate: now,
-          nextTask
+          nextTask,
+          estimatedDays
         };
       })
     );
@@ -386,7 +425,8 @@ export function useOnePercent() {
         streak: newStreak,
         currentMetric: nextMetric,
         lastCompletedDate: now,
-        nextTask
+        nextTask,
+        estimatedDays
       };
 
       const { error: updateError } = await supabase
@@ -395,7 +435,8 @@ export function useOnePercent() {
           streak: newStreak,
           current_metric: nextMetric,
           last_completed_date: now,
-          next_task: nextTask
+          next_task: nextTask,
+          estimated_days: estimatedDays?.toString()
         })
         .eq('id', id);
         

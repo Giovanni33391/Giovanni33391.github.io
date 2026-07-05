@@ -48,9 +48,18 @@ export default function Home() {
     { label: 'Sáb', value: 6 },
   ];
 
-  const handleCreateChallenge = (name: string, initialMetric: number, unit: string, type: 'quantitative' | 'qualitative', frequency: number[], initialContext?: string) => {
-    addChallenge(name, initialMetric, unit, type, frequency, initialContext);
-    posthog.capture('challenge_created', { name, unit, type, frequency, initialContext });
+  const handleCreateChallenge = (
+    name: string,
+    initialMetric: number,
+    unit: string,
+    type: 'quantitative' | 'qualitative',
+    frequency: number[],
+    initialContext?: string,
+    targetMetric?: number,
+    targetGoal?: string
+  ) => {
+    addChallenge(name, initialMetric, unit, type, frequency, initialContext, targetMetric, targetGoal);
+    posthog.capture('challenge_created', { name, unit, type, frequency, initialContext, targetMetric, targetGoal });
     setIsModalOpen(false);
   };
   

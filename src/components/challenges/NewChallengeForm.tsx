@@ -4,7 +4,16 @@ import { Zap, BarChart3, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface NewChallengeFormProps {
-  onSubmit: (name: string, initialMetric: number, unit: string, type: 'quantitative' | 'qualitative', frequency: number[], initialContext?: string) => void;
+  onSubmit: (
+    name: string,
+    initialMetric: number,
+    unit: string,
+    type: 'quantitative' | 'qualitative',
+    frequency: number[],
+    initialContext?: string,
+    targetMetric?: number,
+    targetGoal?: string
+  ) => void;
   onCancel: () => void;
 }
 
@@ -21,6 +30,8 @@ const DAYS = [
 export function NewChallengeForm({ onSubmit, onCancel }: NewChallengeFormProps) {
   const [name, setName] = useState('');
   const [metric, setMetric] = useState('1');
+  const [targetMetric, setTargetMetric] = useState('');
+  const [targetGoal, setTargetGoal] = useState('');
   const [unit, setUnit] = useState('');
   const [type, setType] = useState<'quantitative' | 'qualitative'>('quantitative');
   const [frequency, setFrequency] = useState<number[]>([0, 1, 2, 3, 4, 5, 6]);
@@ -46,7 +57,9 @@ export function NewChallengeForm({ onSubmit, onCancel }: NewChallengeFormProps) 
       unit.trim(),
       type,
       frequency,
-      type === 'qualitative' ? initialContext.trim() : undefined
+      type === 'qualitative' ? initialContext.trim() : undefined,
+      type === 'quantitative' && targetMetric ? Number(targetMetric) : undefined,
+      type === 'qualitative' && targetGoal ? targetGoal.trim() : undefined
     );
   };
 
@@ -163,6 +176,22 @@ export function NewChallengeForm({ onSubmit, onCancel }: NewChallengeFormProps) 
               required
             />
           </div>
+
+          <div className="col-span-2 space-y-2">
+            <label htmlFor="targetMetric" className="text-sm font-medium text-zinc-400">
+              Meta final (Opcional)
+            </label>
+            <input
+              id="targetMetric"
+              type="number"
+              min="1"
+              step="any"
+              placeholder="Ej. 30"
+              value={targetMetric}
+              onChange={(e) => setTargetMetric(e.target.value)}
+              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
+            />
+          </div>
         </div>
       ) : (
         <div className="space-y-4">
@@ -189,7 +218,21 @@ export function NewChallengeForm({ onSubmit, onCancel }: NewChallengeFormProps) 
               placeholder="Ej. Actualmente camino 10 minutos o ya conozco los acordes básicos de la guitarra."
               value={initialContext}
               onChange={(e) => setInitialContext(e.target.value)}
-              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all min-h-[100px] resize-none"
+              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all min-h-[80px] resize-none"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="targetGoal" className="text-sm font-medium text-zinc-400">
+              ¿Cuál es tu meta final? (Opcional)
+            </label>
+            <input
+              id="targetGoal"
+              type="text"
+              placeholder="Ej. Tocar un solo de blues con fluidez"
+              value={targetGoal}
+              onChange={(e) => setTargetGoal(e.target.value)}
+              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all"
             />
           </div>
 
