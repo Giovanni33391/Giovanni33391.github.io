@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Target, Plus, LogIn, LogOut } from 'lucide-react';
+import { Target, Plus, LogOut } from 'lucide-react';
 import { useOnePercent } from '@/hooks/useOnePercent';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
@@ -32,7 +32,6 @@ export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isProModalOpen, setIsProModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [isGuestMode, setIsGuestMode] = useState(false);
   
   const MAX_FREE_CHALLENGES = 3;
 
@@ -83,12 +82,12 @@ export default function Home() {
   // Prevent hydration mismatch by returning null until loaded
   if (!isLoaded) return null;
 
-  // Show landing page if user is not logged in AND has no challenges AND not in guest mode
-  if (!user && challenges.length === 0 && !isGuestMode) {
+  // Show landing page if user is not logged in
+  if (!user) {
     return (
       <>
         <LandingPage
-          onGetStarted={() => setIsGuestMode(true)}
+          onGetStarted={() => setIsAuthModalOpen(true)}
           onSignIn={() => setIsAuthModalOpen(true)}
         />
         <AuthModal
@@ -118,29 +117,14 @@ export default function Home() {
         </div>
 
         <div className="flex items-center gap-4">
-          {!user && challenges.length > 0 && (
-            <Button onClick={handleOpenNewChallenge} className="hidden sm:flex" variant="outline">
-              <Plus className="w-4 h-4 mr-2" />
-              Desafío
-            </Button>
-          )}
-          {user ? (
-            <>
-              <Button onClick={handleOpenNewChallenge} className="hidden sm:flex" variant="outline">
-                <Plus className="w-4 h-4 mr-2" />
-                Desafío
-              </Button>
-              <Button onClick={signOut} variant="ghost" size="sm" className="text-zinc-400 hover:text-red-400">
-                <LogOut className="w-4 h-4 mr-2" />
-                Salir
-              </Button>
-            </>
-          ) : (
-            <Button onClick={() => setIsAuthModalOpen(true)} variant="default" size="sm">
-              <LogIn className="w-4 h-4 mr-2" />
-              Sincronizar
-            </Button>
-          )}
+          <Button onClick={handleOpenNewChallenge} className="hidden sm:flex" variant="outline">
+            <Plus className="w-4 h-4 mr-2" />
+            Desafío
+          </Button>
+          <Button onClick={signOut} variant="ghost" size="sm" className="text-zinc-400 hover:text-red-400">
+            <LogOut className="w-4 h-4 mr-2" />
+            Salir
+          </Button>
         </div>
       </motion.header>
 
@@ -244,13 +228,6 @@ export default function Home() {
         isOpen={isProModalOpen} 
         onClose={() => setIsProModalOpen(false)} 
       />
-
-      {!user && challenges.length > 0 && (
-        <AuthModal
-          isOpen={isAuthModalOpen}
-          onClose={() => setIsAuthModalOpen(false)}
-        />
-      )}
     </main>
   );
 }
