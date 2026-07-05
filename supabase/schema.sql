@@ -24,6 +24,8 @@ create table public.challenges (
   current_metric numeric not null,
   last_completed_date timestamp with time zone,
   next_task text,
+  initial_context text,
+  estimated_days integer,
   frequency integer[] default '{0,1,2,3,4,5,6}'::integer[] not null,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );

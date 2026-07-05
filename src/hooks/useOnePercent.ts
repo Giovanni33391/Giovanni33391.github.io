@@ -11,7 +11,7 @@ const GUEST_MODE_KEY = 'onepercent_guest_mode';
 // Define a type for pending sync actions instead of using any
 type PendingAction = 
   | { type: 'INSERT'; data: Challenge }
-  | { type: 'UPDATE'; data: { id: string; streak: number; currentMetric: number; lastCompletedDate: string; nextTask?: string } }
+  | { type: 'UPDATE'; data: { id: string; streak: number; currentMetric: number; lastCompletedDate: string; nextTask?: string; initialContext?: string } }
   | { type: 'DELETE'; data: { id: string } };
 
 // Helper to check if a date string is today
@@ -125,6 +125,8 @@ export function useOnePercent() {
             streak: action.data.streak,
             last_completed_date: action.data.lastCompletedDate,
             next_task: action.data.nextTask,
+            initial_context: action.data.initialContext,
+            estimated_days: action.data.estimatedDays,
             frequency: action.data.frequency,
           });
           if (error) remainingActions.push(action);
@@ -189,6 +191,8 @@ export function useOnePercent() {
               initialMetric: dbChallenge.initial_metric,
               currentMetric: dbChallenge.current_metric,
               targetMetric: dbChallenge.target_metric,
+              initialContext: dbChallenge.initial_context,
+              estimatedDays: dbChallenge.estimated_days,
               unit: dbChallenge.unit,
               streak: dbChallenge.streak,
               nextTask: dbChallenge.next_task,
@@ -225,15 +229,15 @@ export function useOnePercent() {
   }, [challenges, isLoaded]);
 
   // AI Task Generation Helper
-  const fetchNextAITask = async (challengeName: string, streak: number, unit: string, lastTask?: string) => {
+  const fetchNextAITask = async (challengeName: string, streak: number, unit: string, lastTask?: string, initialContext?: string) => {
     try {
       const response = await fetch('/api/ai/generate-task', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ challengeName, streak, unit, lastTask }),
+        body: JSON.stringify({ challengeName, streak, unit, lastTask, initialContext }),
       });
       const data = await response.json();
-      return data.nextTask;
+      return { nextTask: data.nextTask, estimatedDays: data.estimatedDays };
     } catch (err) {
       console.error('Failed to fetch AI task:', err);
       return null;
@@ -282,10 +286,13 @@ export function useOnePercent() {
   };
 
   // Actions
-  const addChallenge = useCallback(async (name: string, initialMetric: number, unit: string, type: 'quantitative' | 'qualitative' = 'quantitative', targetMetric?: number, frequency: number[] = [0, 1, 2, 3, 4, 5, 6]) => {
+  const addChallenge = useCallback(async (name: string, initialMetric: number, unit: string, type: 'quantitative' | 'qualitative' = 'quantitative', targetMetric?: number, frequency: number[] = [0, 1, 2, 3, 4, 5, 6], initialContext?: string) => {
     let nextTask = undefined;
+    let estimatedDays = undefined;
     if (type === 'qualitative') {
-      nextTask = await fetchNextAITask(name, 0, unit);
+      const aiData = await fetchNextAITask(name, 0, unit, undefined, initialContext);
+      nextTask = aiData?.nextTask;
+      estimatedDays = aiData?.estimatedDays;
       if (!nextTask) {
         nextTask = "Identifica una pequeña mejora para mañana.";
       }
@@ -298,6 +305,8 @@ export function useOnePercent() {
       initialMetric,
       currentMetric: initialMetric,
       targetMetric,
+      initialContext,
+      estimatedDays,
       unit,
       streak: 0,
       nextTask,
@@ -319,9 +328,11 @@ export function useOnePercent() {
         current_metric: newChallenge.currentMetric,
         target_metric: newChallenge.targetMetric,
         unit: newChallenge.unit,
+        estimated_days: newChallenge.estimatedDays,
         streak: newChallenge.streak,
         last_completed_date: newChallenge.lastCompletedDate,
         next_task: newChallenge.nextTask,
+        initial_context: newChallenge.initialContext,
         frequency: newChallenge.frequency,
       }).select().single();
 
@@ -343,7 +354,8 @@ export function useOnePercent() {
 
     let nextTask = challengeToUpdate.nextTask;
     if (challengeToUpdate.type === 'qualitative') {
-      nextTask = await fetchNextAITask(challengeToUpdate.name, newStreak, challengeToUpdate.unit, challengeToUpdate.nextTask);
+      const aiData = await fetchNextAITask(challengeToUpdate.name, newStreak, challengeToUpdate.unit, challengeToUpdate.nextTask, challengeToUpdate.initialContext);
+      nextTask = aiData?.nextTask;
       if (!nextTask) {
         nextTask = "¡Buen trabajo! Mañana busca otro pequeño avance del 1%.";
       }

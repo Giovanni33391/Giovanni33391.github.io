@@ -3,12 +3,14 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Target, Plus, LogIn, LogOut } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { useOnePercent } from '@/hooks/useOnePercent';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { EmptyState } from '@/components/challenges/EmptyState';
 import { ChallengeCard } from '@/components/challenges/ChallengeCard';
 import { NewChallengeForm } from '@/components/challenges/NewChallengeForm';
+import { StatsDashboard } from '@/components/dashboard/StatsDashboard';
 import { ProModal } from '@/components/ui/ProModal';
 import { LandingPage } from '@/components/landing/LandingPage';
 import { AuthModal } from '@/components/auth/AuthModal';
@@ -31,7 +33,18 @@ export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isProModalOpen, setIsProModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [selectedDay, setSelectedDay] = useState(new Date().getDay());
   
+  const daysOfWeek = [
+    { label: 'Dom', value: 0 },
+    { label: 'Lun', value: 1 },
+    { label: 'Mar', value: 2 },
+    { label: 'Mié', value: 3 },
+    { label: 'Jue', value: 4 },
+    { label: 'Vie', value: 5 },
+    { label: 'Sáb', value: 6 },
+  ];
+
   const MAX_FREE_CHALLENGES = 3;
 
   const handleCreateChallenge = (name: string, initialMetric: number, unit: string, type: 'quantitative' | 'qualitative', targetMetric?: number) => {
@@ -52,6 +65,12 @@ export default function Home() {
     completeChallenge(id);
     posthog.capture('habit_completed', { challenge_id: id });
   }
+
+  const filteredChallenges = challenges.filter(challenge => {
+    // If no frequency is set, show on all days (fallback)
+    if (!challenge.frequency || challenge.frequency.length === 0) return true;
+    return challenge.frequency.includes(selectedDay);
+  });
 
   // Prevent hydration mismatch by returning null until loaded
   if (!isLoaded) return null;
@@ -126,27 +145,55 @@ export default function Home() {
       {challenges.length === 0 ? (
         <EmptyState onCreateClick={handleOpenNewChallenge} />
       ) : (
-        <motion.div 
+        <>
+          <StatsDashboard challenges={challenges} />
+
+          {/* Day Selector */}
+          <div className="flex justify-between items-center mb-8 bg-zinc-900/30 p-1 rounded-xl border border-zinc-800/50">
+            {daysOfWeek.map((day) => (
+              <button
+                key={day.value}
+                onClick={() => setSelectedDay(day.value)}
+                className={cn(
+                  "flex-1 py-2 text-xs font-bold transition-all rounded-lg",
+                  selectedDay === day.value
+                    ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20"
+                    : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50"
+                )}
+              >
+                {day.label}
+              </button>
+            ))}
+          </div>
+
+          <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
         >
-          {challenges.map((challenge, index) => (
-            <motion.div
-              key={challenge.id}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <ChallengeCard 
-                challenge={challenge}
-                onComplete={handleCompleteChallenge}
-                onDelete={deleteChallenge}
-                isToday={isToday}
-              />
-            </motion.div>
-          ))}
+          {filteredChallenges.length > 0 ? (
+            filteredChallenges.map((challenge, index) => (
+              <motion.div
+                key={challenge.id}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <ChallengeCard
+                  challenge={challenge}
+                  onComplete={handleCompleteChallenge}
+                  onDelete={deleteChallenge}
+                  isToday={isToday}
+                />
+              </motion.div>
+            ))
+          ) : (
+            <div className="col-span-full py-12 text-center bg-zinc-900/20 border border-zinc-800/50 border-dashed rounded-3xl">
+              <p className="text-zinc-500 font-medium">No hay desafíos programados para hoy.</p>
+            </div>
+          )}
         </motion.div>
+        </>
       )}
 
       {/* Mobile FAB */}

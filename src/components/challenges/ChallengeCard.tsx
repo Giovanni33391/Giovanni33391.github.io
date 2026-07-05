@@ -102,14 +102,30 @@ export function ChallengeCard({ challenge, onComplete, onDelete, isToday }: Chal
         </div>
 
         {isQualitative ? (
-          <div className="mb-8 p-4 rounded-xl bg-purple-500/10 border border-purple-500/20 relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-2 opacity-20">
-              <Sparkles className="w-8 h-8 text-purple-400" />
+          <div className="space-y-4 mb-8">
+            <div className="p-4 rounded-xl bg-purple-500/10 border border-purple-500/20 relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-2 opacity-20">
+                <Sparkles className="w-8 h-8 text-purple-400" />
+              </div>
+              <p className="text-[10px] uppercase font-bold text-purple-400 tracking-widest mb-2">Próximo paso IA (1%)</p>
+              <p className="text-zinc-100 font-medium leading-relaxed">
+                {challenge.nextTask || 'Generando tu próximo desafío...'}
+              </p>
             </div>
-            <p className="text-[10px] uppercase font-bold text-purple-400 tracking-widest mb-2">Próximo paso IA (1%)</p>
-            <p className="text-zinc-100 font-medium leading-relaxed">
-              {challenge.nextTask || 'Generando tu próximo desafío...'}
-            </p>
+            <div className="flex items-center gap-1.5 text-[10px] font-medium text-purple-400/80 bg-purple-500/5 py-1 px-2 rounded-lg border border-purple-500/10 w-fit">
+              <Sparkles className="w-3 h-3" />
+              <span>
+                Est. {(() => {
+                  if (challenge.estimatedDays) {
+                    const remaining = challenge.estimatedDays - challenge.streak;
+                    if (remaining <= 0) return "Nivel avanzado";
+                    if (remaining > 365) return "1 año o más";
+                    return `${remaining} días para maestría`;
+                  }
+                  return challenge.streak < 30 ? `${30 - challenge.streak} días para maestría` : "Nivel avanzado";
+                })()}
+              </span>
+            </div>
           </div>
         ) : (
           <div className="flex items-end justify-between mb-8">

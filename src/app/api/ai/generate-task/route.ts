@@ -9,12 +9,13 @@ export async function POST(req: Request) {
       apiKey: process.env.OPENAI_API_KEY,
     });
 
-    const { challengeName, streak, unit, lastTask } = await req.json();
+    const { challengeName, streak, unit, lastTask, initialContext } = await req.json();
 
     const prompt = `
       Basado en el concepto de "Hábitos Atómicos" de James Clear, donde buscamos mejorar un 1% cada día.
 
       El usuario tiene un hábito llamado: "${challengeName}".
+      ${initialContext ? `Punto de partida/Contexto inicial: "${initialContext}".` : ''}
       Actualmente tiene una racha de ${streak} días.
       La unidad de medida es: "${unit}".
       ${lastTask ? `La tarea anterior fue: "${lastTask}".` : ''}
@@ -34,7 +35,11 @@ export async function POST(req: Request) {
       Día 2: Lee tu frase favorita en voz alta y cámbiale un adjetivo.
       Día 3: Escribe una descripción de un personaje usando solo 5 palabras.
 
-      Responde SOLO con el texto de la tarea, sin explicaciones ni comillas.
+      Responde en formato JSON estrictamente con la siguiente estructura:
+      {
+        "nextTask": "texto de la tarea",
+        "estimatedDays": número_estimado_de_días_para_maestría (solo si streak es 0, sino null)
+      }
     `;
 
     const response = await openai.chat.completions.create({
@@ -42,17 +47,19 @@ export async function POST(req: Request) {
       messages: [
         {
           role: 'system',
-          content: 'Eres un experto en formación de hábitos, psicología del comportamiento y productividad minimalista. Tu objetivo es dar consejos extremadamente creativos, específicos y accionables.'
+          content: 'Eres un experto en formación de hábitos, psicología del comportamiento y productividad minimalista. Tu objetivo es dar consejos extremadamente creativos, específicos y accionables. Responde siempre en JSON.'
         },
         { role: 'user', content: prompt }
       ],
+      response_format: { type: "json_object" },
       temperature: 0.8,
-      max_tokens: 100,
+      max_tokens: 150,
     });
 
-    const nextTask = response.choices[0]?.message?.content?.trim();
+    const content = response.choices[0]?.message?.content || '{}';
+    const { nextTask, estimatedDays } = JSON.parse(content);
 
-    return NextResponse.json({ nextTask });
+    return NextResponse.json({ nextTask, estimatedDays });
   } catch (error: unknown) {
     console.error('AI Generation Error:', error);
     return NextResponse.json({ error: 'Error al generar la tarea con IA' }, { status: 500 });

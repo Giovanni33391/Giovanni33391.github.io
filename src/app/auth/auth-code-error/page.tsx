@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function AuthCodeError() {
   return (
     <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
@@ -6,12 +8,12 @@ export default function AuthCodeError() {
         <p className="text-zinc-400 mb-6">
           Hubo un problema al procesar tu inicio de sesión. Esto puede deberse a un enlace expirado o a un error en la configuración.
         </p>
-        <a
+        <Link
           href="/"
           className="inline-block bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 px-6 rounded-xl transition-colors"
         >
           Volver al inicio
-        </a>
+        </Link>
       </div>
     </div>
   )

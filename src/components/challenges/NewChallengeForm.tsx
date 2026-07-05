@@ -4,7 +4,7 @@ import { Zap, BarChart3, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface NewChallengeFormProps {
-  onSubmit: (name: string, initialMetric: number, unit: string, type: 'quantitative' | 'qualitative', targetMetric?: number) => void;
+  onSubmit: (name: string, initialMetric: number, unit: string, type: 'quantitative' | 'qualitative', targetMetric?: number, frequency?: number[], initialContext?: string) => void;
   onCancel: () => void;
 }
 
@@ -13,7 +13,27 @@ export function NewChallengeForm({ onSubmit, onCancel }: NewChallengeFormProps) 
   const [metric, setMetric] = useState('1');
   const [targetMetric, setTargetMetric] = useState('');
   const [unit, setUnit] = useState('');
+  const [initialContext, setInitialContext] = useState('');
+  const [frequency, setFrequency] = useState<number[]>([0, 1, 2, 3, 4, 5, 6]);
   const [type, setType] = useState<'quantitative' | 'qualitative'>('quantitative');
+
+  const daysOfWeek = [
+    { label: 'D', value: 0 },
+    { label: 'L', value: 1 },
+    { label: 'M', value: 2 },
+    { label: 'X', value: 3 },
+    { label: 'J', value: 4 },
+    { label: 'V', value: 5 },
+    { label: 'S', value: 6 },
+  ];
+
+  const toggleDay = (day: number) => {
+    setFrequency(prev =>
+      prev.includes(day)
+        ? prev.filter(d => d !== day)
+        : [...prev, day].sort()
+    );
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,7 +44,9 @@ export function NewChallengeForm({ onSubmit, onCancel }: NewChallengeFormProps) 
       Number(metric),
       unit.trim(),
       type,
-      targetMetric ? Number(targetMetric) : undefined
+      targetMetric ? Number(targetMetric) : undefined,
+      frequency,
+      initialContext.trim() || undefined
     );
   };
 
@@ -133,13 +155,26 @@ export function NewChallengeForm({ onSubmit, onCancel }: NewChallengeFormProps) 
       ) : (
         <div className="space-y-4">
           <div className="space-y-2">
+            <label htmlFor="initialContext" className="text-sm font-medium text-zinc-400">
+              ¿Cuál es tu situación actual? (Contexto para la IA)
+            </label>
+            <textarea
+              id="initialContext"
+              placeholder="Ej. Puedo escribir 200 palabras pero me trabo mucho..."
+              value={initialContext}
+              onChange={(e) => setInitialContext(e.target.value)}
+              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all min-h-[100px] resize-none"
+              required
+            />
+          </div>
+          <div className="space-y-2">
             <label htmlFor="unit" className="text-sm font-medium text-zinc-400">
-              ¿Cómo lo medirías? (Para contexto de la IA)
+              Unidad de medida
             </label>
             <input
               id="unit"
               type="text"
-              placeholder="Ej. calidad, fluidez, complejidad"
+              placeholder="Ej. palabras, minutos, calidad"
               value={unit}
               onChange={(e) => setUnit(e.target.value)}
               className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all"
@@ -152,6 +187,29 @@ export function NewChallengeForm({ onSubmit, onCancel }: NewChallengeFormProps) 
           </div>
         </div>
       )}
+
+      <div className="space-y-3">
+        <label className="text-sm font-medium text-zinc-400">
+          ¿Qué días vas a entrenar?
+        </label>
+        <div className="flex justify-between gap-1">
+          {daysOfWeek.map((day) => (
+            <button
+              key={day.value}
+              type="button"
+              onClick={() => toggleDay(day.value)}
+              className={cn(
+                "w-10 h-10 rounded-xl border text-xs font-bold transition-all",
+                frequency.includes(day.value)
+                  ? "bg-emerald-500/10 border-emerald-500 text-emerald-400"
+                  : "bg-zinc-950 border-zinc-800 text-zinc-500 hover:border-zinc-700"
+              )}
+            >
+              {day.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div className="pt-4 flex items-center justify-end gap-3">
         <Button type="button" variant="ghost" onClick={onCancel}>
