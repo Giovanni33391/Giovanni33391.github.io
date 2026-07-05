@@ -77,17 +77,26 @@ export async function POST(req: Request) {
 
     let content = response.choices[0]?.message?.content?.trim() || '{}';
 
-    // Robust JSON parsing (handles markdown code blocks)
-    if (content.includes('```')) {
-      content = content.replace(/```json\n?|```/g, '').trim();
+    // Robust JSON extraction
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      content = jsonMatch[0];
     }
 
-    const data = JSON.parse(content);
-
-    return NextResponse.json({
-      nextTask: data.nextTask,
-      estimatedDays: data.estimatedDays
-    });
+    try {
+      const data = JSON.parse(content);
+      return NextResponse.json({
+        nextTask: data.nextTask,
+        estimatedDays: data.estimatedDays
+      });
+    } catch (_parseError) {
+      console.error('Failed to parse AI JSON:', content);
+      // Fallback for malformed JSON but containing text
+      return NextResponse.json({
+        nextTask: content.length < 100 ? content : 'Sigue progresando un 1% cada día.',
+        estimatedDays: null
+      });
+    }
   } catch (error: unknown) {
     console.error('AI Generation Error:', error);
     return NextResponse.json({ error: 'Error al generar la tarea con IA' }, { status: 500 });
