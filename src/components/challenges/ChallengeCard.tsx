@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle2, Flame, TrendingUp, Trash2, Zap, Sparkles, Target, RotateCcw } from 'lucide-react';
+import { CheckCircle2, Flame, TrendingUp, Trash2, Zap, Sparkles, Clock, RotateCcw } from 'lucide-react';
 import { Area, AreaChart, ResponsiveContainer } from 'recharts';
 import confetti from 'canvas-confetti';
 import { Challenge } from '@/types';
@@ -154,9 +154,9 @@ export function ChallengeCard({ challenge, onComplete, onDelete, onRefresh, isTo
               {challenge.nextTask || 'Generando tu próximo desafío...'}
             </p>
             {daysToTarget && (
-              <div className="mt-3 flex items-center gap-1.5 text-[10px] font-bold text-purple-400/80 uppercase tracking-wider">
-                <Sparkles className="w-3 h-3" />
-                Faltan aprox. {daysToTarget} {Number(daysToTarget) === 1 ? 'día' : (!isNaN(Number(daysToTarget)) ? 'días' : '')}
+              <div className="mt-3 flex items-center gap-1.5 text-[10px] font-bold text-purple-400 uppercase tracking-wider bg-purple-500/10 w-fit px-2 py-1 rounded-md border border-purple-500/20">
+                <Clock className="w-3 h-3" />
+                Faltan aprox. {daysToTarget} {daysToTarget === 1 || daysToTarget === '1' ? 'día' : (!isNaN(Number(daysToTarget)) ? 'días' : '')}
               </div>
             )}
           </div>
@@ -172,9 +172,9 @@ export function ChallengeCard({ challenge, onComplete, onDelete, onRefresh, isTo
                   <span className="text-zinc-500 font-medium">{challenge.unit}</span>
                 </div>
                 {daysToTarget && (
-                  <div className="mt-1 flex items-center gap-1 text-[10px] font-bold text-emerald-500/80 uppercase tracking-wider">
-                    <Target className="w-3 h-3" />
-                    Meta: {challenge.targetMetric} — Faltan {daysToTarget} {Number(daysToTarget) === 1 ? 'día' : (!isNaN(Number(daysToTarget)) ? 'días' : '')}
+                  <div className="mt-1.5 flex items-center gap-1.5 text-[10px] font-bold text-emerald-500 uppercase tracking-wider bg-emerald-500/10 w-fit px-2 py-0.5 rounded-md border border-emerald-500/20">
+                    <Clock className="w-3 h-3" />
+                    Meta: {challenge.targetMetric} — Faltan {daysToTarget} {daysToTarget === 1 || daysToTarget === '1' ? 'día' : (!isNaN(Number(daysToTarget)) ? 'días' : '')}
                   </div>
                 )}
               </div>
