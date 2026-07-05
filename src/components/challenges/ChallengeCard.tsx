@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle2, Flame, TrendingUp, Trash2, Zap, Sparkles, Target } from 'lucide-react';
+import { CheckCircle2, Flame, TrendingUp, Trash2, Zap, Sparkles, Target, RotateCcw } from 'lucide-react';
 import { Area, AreaChart, ResponsiveContainer } from 'recharts';
 import confetti from 'canvas-confetti';
 import { Challenge } from '@/types';
@@ -11,12 +11,14 @@ interface ChallengeCardProps {
   challenge: Challenge;
   onComplete: (id: string) => void;
   onDelete: (id: string) => void;
+  onRefresh?: (id: string) => void;
   isToday: (date: string | null) => boolean;
 }
 
-export function ChallengeCard({ challenge, onComplete, onDelete, isToday }: ChallengeCardProps) {
+export function ChallengeCard({ challenge, onComplete, onDelete, onRefresh, isToday }: ChallengeCardProps) {
   const [mounted, setMounted] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setMounted(true), 0);
@@ -27,16 +29,18 @@ export function ChallengeCard({ challenge, onComplete, onDelete, isToday }: Chal
   const isQualitative = challenge.type === 'qualitative';
 
   const daysToTarget = useMemo(() => {
-    if (isQualitative) return challenge.estimatedDays;
-    if (!challenge.targetMetric || challenge.targetMetric <= challenge.currentMetric) return null;
+    // If we have an AI estimate, use it regardless of type (as requested: todo usuario registrado pueda usar...)
+    if (challenge.estimatedDays) return challenge.estimatedDays;
 
-    // Formula for compound growth: target = current * (1.01)^n
-    // n = log(target/current) / log(1.01)
-    const days = Math.log(challenge.targetMetric / challenge.currentMetric) / Math.log(1.01);
-    const roundedDays = Math.ceil(days);
+    // Fallback for quantitative without AI estimate yet
+    if (!isQualitative && challenge.targetMetric && challenge.targetMetric > challenge.currentMetric) {
+      const days = Math.log(challenge.targetMetric / challenge.currentMetric) / Math.log(1.01);
+      const roundedDays = Math.ceil(days);
+      if (roundedDays > 365) return "un año o más";
+      return roundedDays;
+    }
 
-    if (roundedDays > 365) return "un año o más";
-    return roundedDays;
+    return null;
   }, [challenge.currentMetric, challenge.targetMetric, challenge.estimatedDays, isQualitative]);
   
   const handleComplete = async () => {
@@ -56,6 +60,16 @@ export function ChallengeCard({ challenge, onComplete, onDelete, isToday }: Chal
       await onComplete(challenge.id);
     } finally {
       setIsCompleting(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    if (isRefreshing || !onRefresh) return;
+    setIsRefreshing(true);
+    try {
+      await onRefresh(challenge.id);
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -103,15 +117,31 @@ export function ChallengeCard({ challenge, onComplete, onDelete, isToday }: Chal
               Racha: {challenge.streak} {challenge.streak === 1 ? 'día' : 'días'}
             </div>
           </div>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => onDelete(challenge.id)}
-            className="text-zinc-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
-            aria-label="Eliminar desafío"
-          >
-            <Trash2 className="w-4 h-4" />
-          </Button>
+          <div className="flex gap-1">
+            {onRefresh && (isQualitative || challenge.targetMetric) && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleRefresh}
+                className={cn(
+                  "text-zinc-500 hover:text-emerald-400 opacity-0 group-hover:opacity-100 transition-all",
+                  isRefreshing && "animate-spin opacity-100"
+                )}
+                aria-label="Actualizar sugerencia"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onDelete(challenge.id)}
+              className="text-zinc-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+              aria-label="Eliminar desafío"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
 
         {isQualitative ? (
@@ -126,27 +156,38 @@ export function ChallengeCard({ challenge, onComplete, onDelete, isToday }: Chal
             {daysToTarget && (
               <div className="mt-3 flex items-center gap-1.5 text-[10px] font-bold text-purple-400/80 uppercase tracking-wider">
                 <Sparkles className="w-3 h-3" />
-                Faltan aprox. {daysToTarget} {!isNaN(Number(daysToTarget)) ? 'días' : ''}
+                Faltan aprox. {daysToTarget} {Number(daysToTarget) === 1 ? 'día' : (!isNaN(Number(daysToTarget)) ? 'días' : '')}
               </div>
             )}
           </div>
         ) : (
-          <div className="flex items-end justify-between mb-8">
-            <div>
-              <p className="text-sm text-zinc-400 mb-1">Objetivo de hoy</p>
-              <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-black text-zinc-100 tracking-tight">
-                  {formatMetric(challenge.currentMetric)}
-                </span>
-                <span className="text-zinc-500 font-medium">{challenge.unit}</span>
-              </div>
-              {daysToTarget && (
-                <div className="mt-1 flex items-center gap-1 text-[10px] font-bold text-emerald-500/80 uppercase tracking-wider">
-                  <Target className="w-3 h-3" />
-                  Meta: {challenge.targetMetric} — Faltan {daysToTarget} {!isNaN(Number(daysToTarget)) ? 'días' : ''}
+          <div className="mb-8">
+            <div className="flex items-end justify-between mb-4">
+              <div>
+                <p className="text-sm text-zinc-400 mb-1">Objetivo de hoy</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-black text-zinc-100 tracking-tight">
+                    {formatMetric(challenge.currentMetric)}
+                  </span>
+                  <span className="text-zinc-500 font-medium">{challenge.unit}</span>
                 </div>
-              )}
+                {daysToTarget && (
+                  <div className="mt-1 flex items-center gap-1 text-[10px] font-bold text-emerald-500/80 uppercase tracking-wider">
+                    <Target className="w-3 h-3" />
+                    Meta: {challenge.targetMetric} — Faltan {daysToTarget} {Number(daysToTarget) === 1 ? 'día' : (!isNaN(Number(daysToTarget)) ? 'días' : '')}
+                  </div>
+                )}
+              </div>
             </div>
+
+            {challenge.nextTask && (
+              <div className="p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
+                <p className="text-[10px] uppercase font-bold text-emerald-500/60 tracking-widest mb-1">Tip de la IA</p>
+                <p className="text-xs text-zinc-300 leading-relaxed italic">
+                  &quot;{challenge.nextTask}&quot;
+                </p>
+              </div>
+            )}
           </div>
         )}
 

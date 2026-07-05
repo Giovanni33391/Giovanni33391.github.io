@@ -10,22 +10,41 @@ export async function POST(req: Request) {
     });
 
     // Allow guest users to use AI generation for testing/trial
-    const { challengeName, streak, unit, lastTask, initialContext, targetGoal } = await req.json();
+    const {
+      challengeName,
+      streak,
+      unit,
+      lastTask,
+      initialContext,
+      targetGoal,
+      targetMetric,
+      currentMetric,
+      type
+    } = await req.json();
+
+    const isQuantitative = type === 'quantitative';
 
     const prompt = `
       Basado en el concepto de "Hábitos Atómicos" de James Clear, donde buscamos mejorar un 1% cada día.
 
       El usuario tiene un hábito llamado: "${challengeName}".
+      Tipo de hábito: ${isQuantitative ? 'Cuantitativo (basado en números)' : 'Cualitativo (basado en habilidad/calidad)'}.
       Actualmente tiene una racha de ${streak} días.
-      La unidad de medida es: "${unit}".
-      ${initialContext ? `El punto de partida o base actual del usuario es: "${initialContext}".` : ''}
-      ${targetGoal ? `La meta final del usuario es: "${targetGoal}".` : ''}
-      ${lastTask ? `La tarea anterior fue: "${lastTask}".` : ''}
+      ${isQuantitative ? `Valor actual: ${currentMetric} ${unit}.` : `Contexto actual: "${initialContext || 'Empezando desde cero'}".`}
+      ${isQuantitative ? (targetMetric ? `Meta final: ${targetMetric} ${unit}.` : '') : (targetGoal ? `Meta final: "${targetGoal}".` : '')}
+      ${lastTask ? `La última tarea sugerida fue: "${lastTask}".` : ''}
 
-      Por favor, genera la SIGUIENTE tarea específica para mañana que represente un incremento del 1% respecto al progreso actual.
-      Es MUY IMPORTANTE que la tarea NO sea repetitiva. Debe ser creativa, variada y ofrecer un nuevo ángulo o desafío pequeño relacionado con el hábito para mantener el interés.
+      TU TAREA:
+      1. Genera la SIGUIENTE tarea específica para mañana que represente un incremento del 1% respecto al progreso actual.
+         - Si es cuantitativo, la tarea debe sugerir realizar un pequeño incremento o mejora técnica.
+         - Si es cualitativo, debe ser un paso accionable y pequeño.
+         - Es MUY IMPORTANTE que la tarea NO sea repetitiva. Debe ser creativa y variada.
 
-      Además, si se proporciona una meta final, estima cuántos días de consistencia (mejora diaria del 1%) faltan para alcanzarla razonablemente. Si el tiempo estimado es superior a 365 días, simplemente indica "un año o más".
+      2. Estima cuántos días de consistencia (mejorando un 1% diario) faltan para alcanzar la meta final.
+         - Si es cuantitativo, usa la fórmula de crecimiento compuesto: Meta = Actual * (1.01)^n.
+         - Si es cualitativo, haz una estimación profesional basada en la complejidad de la meta.
+         - REGLA CRÍTICA: Si el tiempo estimado es superior a 365 días, responde EXACTAMENTE "un año o más".
+         - Si no hay meta, devuelve null para estimatedDays.
 
       La tarea debe ser:
       1. Concreta y accionable.

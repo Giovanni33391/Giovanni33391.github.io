@@ -253,12 +253,32 @@ export function useOnePercent() {
   }, [challenges, logs, isLoaded]);
 
   // AI Task Generation Helper
-  const fetchNextAITask = async (challengeName: string, streak: number, unit: string, lastTask?: string, initialContext?: string, targetGoal?: string) => {
+  const fetchNextAITask = async (
+    challengeName: string,
+    streak: number,
+    unit: string,
+    lastTask?: string,
+    initialContext?: string,
+    targetGoal?: string,
+    targetMetric?: number,
+    currentMetric?: number,
+    type: 'quantitative' | 'qualitative' = 'qualitative'
+  ) => {
     try {
       const response = await fetch('/api/ai/generate-task', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ challengeName, streak, unit, lastTask, initialContext, targetGoal }),
+        body: JSON.stringify({
+          challengeName,
+          streak,
+          unit,
+          lastTask,
+          initialContext,
+          targetGoal,
+          targetMetric,
+          currentMetric,
+          type
+        }),
       });
       const data = await response.json();
       return { nextTask: data.nextTask, estimatedDays: data.estimatedDays };
@@ -311,13 +331,28 @@ export function useOnePercent() {
     let nextTask = undefined;
     let estimatedDays = undefined;
 
-    if (type === 'qualitative') {
-      const aiData = await fetchNextAITask(name, 0, unit, undefined, initialContext, targetGoal);
+    // AI generation for registered users (qualitative always, quantitative if goal provided)
+    if (user && (type === 'qualitative' || (type === 'quantitative' && targetMetric))) {
+      const aiData = await fetchNextAITask(
+        name,
+        0,
+        unit,
+        undefined,
+        initialContext,
+        targetGoal,
+        targetMetric,
+        initialMetric,
+        type
+      );
       nextTask = aiData?.nextTask;
       estimatedDays = aiData?.estimatedDays;
-      if (!nextTask) {
+
+      if (!nextTask && type === 'qualitative') {
         nextTask = getBetterFallback(name, 0);
       }
+    } else if (type === 'qualitative') {
+      // Fallback for guest mode or failed AI
+      nextTask = getBetterFallback(name, 0);
     }
 
     const newChallenge: Challenge = {
@@ -368,6 +403,36 @@ export function useOnePercent() {
     }
   }, [user, supabase, addPendingSync]);
 
+  const refreshChallengeTask = useCallback(async (id: string) => {
+    if (!user) return;
+
+    const challenge = challenges.find(c => c.id === id);
+    if (!challenge) return;
+
+    const aiData = await fetchNextAITask(
+      challenge.name,
+      challenge.streak,
+      challenge.unit,
+      challenge.nextTask,
+      challenge.initialContext,
+      challenge.targetGoal,
+      challenge.targetMetric,
+      challenge.currentMetric,
+      challenge.type
+    );
+
+    if (aiData) {
+      setChallenges(prev => prev.map(c =>
+        c.id === id ? { ...c, nextTask: aiData.nextTask, estimatedDays: aiData.estimatedDays } : c
+      ));
+
+      await supabase.from('challenges').update({
+        next_task: aiData.nextTask,
+        estimated_days: aiData.estimatedDays?.toString()
+      }).eq('id', id);
+    }
+  }, [challenges, user, supabase]);
+
   const completeChallenge = useCallback(async (id: string) => {
     const challengeToUpdate = challenges.find(c => c.id === id);
     if (!challengeToUpdate || isToday(challengeToUpdate.lastCompletedDate)) return;
@@ -379,19 +444,22 @@ export function useOnePercent() {
     let nextTask = challengeToUpdate.nextTask;
     let estimatedDays = challengeToUpdate.estimatedDays;
 
-    if (challengeToUpdate.type === 'qualitative') {
+    if (user && (challengeToUpdate.type === 'qualitative' || (challengeToUpdate.type === 'quantitative' && challengeToUpdate.targetMetric))) {
       const aiData = await fetchNextAITask(
         challengeToUpdate.name,
         newStreak,
         challengeToUpdate.unit,
         challengeToUpdate.nextTask,
         challengeToUpdate.initialContext,
-        challengeToUpdate.targetGoal
+        challengeToUpdate.targetGoal,
+        challengeToUpdate.targetMetric,
+        nextMetric,
+        challengeToUpdate.type
       );
       nextTask = aiData?.nextTask;
       estimatedDays = aiData?.estimatedDays;
 
-      if (!nextTask) {
+      if (!nextTask && challengeToUpdate.type === 'qualitative') {
         nextTask = getBetterFallback(challengeToUpdate.name, newStreak);
       }
     }
@@ -503,6 +571,7 @@ export function useOnePercent() {
     addChallenge,
     completeChallenge,
     deleteChallenge,
+    refreshChallengeTask,
     isToday
   };
 }
