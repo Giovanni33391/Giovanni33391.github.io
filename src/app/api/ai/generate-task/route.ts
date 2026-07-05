@@ -9,6 +9,7 @@ export async function POST(req: Request) {
       apiKey: process.env.OPENAI_API_KEY,
     });
 
+    // Allow guest users to use AI generation for testing/trial
     const { challengeName, streak, unit, lastTask } = await req.json();
 
     const prompt = `
@@ -40,14 +41,11 @@ export async function POST(req: Request) {
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
-        {
-          role: 'system',
-          content: 'Eres un experto en formación de hábitos, psicología del comportamiento y productividad minimalista. Tu objetivo es dar consejos extremadamente creativos, específicos y accionables.'
-        },
+        { role: 'system', content: 'Eres un experto en formación de hábitos y productividad minimalista.' },
         { role: 'user', content: prompt }
       ],
       temperature: 0.8,
-      max_tokens: 100,
+      max_tokens: 150,
     });
 
     const nextTask = response.choices[0]?.message?.content?.trim();
