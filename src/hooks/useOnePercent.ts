@@ -119,6 +119,7 @@ export function useOnePercent() {
             streak: action.data.streak,
             last_completed_date: action.data.lastCompletedDate,
             next_task: action.data.nextTask,
+            frequency: action.data.frequency,
           });
           if (error) remainingActions.push(action);
         } else if (action.type === 'UPDATE') {
@@ -184,6 +185,7 @@ export function useOnePercent() {
               unit: dbChallenge.unit,
               streak: dbChallenge.streak,
               nextTask: dbChallenge.next_task,
+              frequency: dbChallenge.frequency || [0, 1, 2, 3, 4, 5, 6],
               startDate: dbChallenge.created_at,
               lastCompletedDate: dbChallenge.last_completed_date,
               createdAt: dbChallenge.created_at,
@@ -261,7 +263,7 @@ export function useOnePercent() {
   };
 
   // Actions
-  const addChallenge = useCallback(async (name: string, initialMetric: number, unit: string, type: 'quantitative' | 'qualitative' = 'quantitative') => {
+  const addChallenge = useCallback(async (name: string, initialMetric: number, unit: string, type: 'quantitative' | 'qualitative' = 'quantitative', frequency: number[] = [0, 1, 2, 3, 4, 5, 6]) => {
     let nextTask = undefined;
     if (type === 'qualitative') {
       nextTask = await fetchNextAITask(name, 0, unit);
@@ -279,6 +281,7 @@ export function useOnePercent() {
       unit,
       streak: 0,
       nextTask,
+      frequency,
       startDate: new Date().toISOString(),
       lastCompletedDate: null,
       createdAt: new Date().toISOString(),
@@ -298,6 +301,7 @@ export function useOnePercent() {
         streak: newChallenge.streak,
         last_completed_date: newChallenge.lastCompletedDate,
         next_task: newChallenge.nextTask,
+        frequency: newChallenge.frequency,
       }).select().single();
 
       if (error) {

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Target, Plus, LogIn, LogOut } from 'lucide-react';
 import { useOnePercent } from '@/hooks/useOnePercent';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { EmptyState } from '@/components/challenges/EmptyState';
@@ -33,9 +34,21 @@ export default function Home() {
   
   const MAX_FREE_CHALLENGES = 3;
 
-  const handleCreateChallenge = (name: string, initialMetric: number, unit: string, type: 'quantitative' | 'qualitative') => {
-    addChallenge(name, initialMetric, unit, type);
-    posthog.capture('challenge_created', { name, unit, type });
+  const [selectedDay, setSelectedDay] = useState<number>(new Date().getDay());
+
+  const DAYS = [
+    { label: 'Dom', value: 0 },
+    { label: 'Lun', value: 1 },
+    { label: 'Mar', value: 2 },
+    { label: 'Mié', value: 3 },
+    { label: 'Jue', value: 4 },
+    { label: 'Vie', value: 5 },
+    { label: 'Sáb', value: 6 },
+  ];
+
+  const handleCreateChallenge = (name: string, initialMetric: number, unit: string, type: 'quantitative' | 'qualitative', frequency: number[]) => {
+    addChallenge(name, initialMetric, unit, type, frequency);
+    posthog.capture('challenge_created', { name, unit, type, frequency });
     setIsModalOpen(false);
   };
   
@@ -51,6 +64,10 @@ export default function Home() {
     completeChallenge(id);
     posthog.capture('habit_completed', { challenge_id: id });
   }
+
+  const filteredChallenges = challenges.filter(challenge =>
+    challenge.frequency.includes(selectedDay)
+  );
 
   // Prevent hydration mismatch by returning null until loaded
   if (!isLoaded) return null;
@@ -116,16 +133,51 @@ export default function Home() {
         </div>
       </motion.header>
 
+      {/* Day Selector Tabs */}
+      {challenges.length > 0 && (
+        <div className="flex overflow-x-auto pb-4 mb-8 gap-2 no-scrollbar">
+          {DAYS.map((day) => (
+            <button
+              key={day.value}
+              onClick={() => setSelectedDay(day.value)}
+              className={cn(
+                "flex-shrink-0 px-6 py-3 rounded-2xl font-bold transition-all border",
+                selectedDay === day.value
+                  ? "bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-500/20"
+                  : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700"
+              )}
+            >
+              {day.label}
+              {day.value === new Date().getDay() && (
+                <span className="ml-2 w-1.5 h-1.5 rounded-full bg-current inline-block" />
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Main Content */}
       {challenges.length === 0 ? (
         <EmptyState onCreateClick={handleOpenNewChallenge} />
+      ) : filteredChallenges.length === 0 ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="py-20 text-center"
+        >
+          <div className="w-16 h-16 bg-zinc-900 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-zinc-800">
+            <Target className="w-8 h-8 text-zinc-700" />
+          </div>
+          <h3 className="text-zinc-100 font-bold text-lg mb-2">No hay desafíos para este día</h3>
+          <p className="text-zinc-500 max-w-xs mx-auto">Selecciona otro día o crea uno nuevo para mejorar un 1% hoy.</p>
+        </motion.div>
       ) : (
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
         >
-          {challenges.map((challenge, index) => (
+          {filteredChallenges.map((challenge, index) => (
             <motion.div
               key={challenge.id}
               initial={{ opacity: 0, scale: 0.9 }}

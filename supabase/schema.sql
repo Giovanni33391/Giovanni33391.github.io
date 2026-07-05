@@ -20,6 +20,7 @@ create table public.challenges (
   unit text not null,
   streak integer default 0 not null,
   current_metric numeric not null,
+  frequency integer[] default '{0,1,2,3,4,5,6}'::integer[] not null,
   last_completed_date timestamp with time zone,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
