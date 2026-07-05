@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle2, Flame, TrendingUp, Trash2, Zap, Sparkles, Target } from 'lucide-react';
+import { CheckCircle2, Flame, TrendingUp, Trash2, Zap, Sparkles, Target, RotateCcw } from 'lucide-react';
 import { Area, AreaChart, ResponsiveContainer } from 'recharts';
 import confetti from 'canvas-confetti';
 import { Challenge } from '@/types';
@@ -11,12 +11,14 @@ interface ChallengeCardProps {
   challenge: Challenge;
   onComplete: (id: string) => void;
   onDelete: (id: string) => void;
+  onRefreshTask: (id: string) => void;
   isToday: (date: string | null) => boolean;
 }
 
-export function ChallengeCard({ challenge, onComplete, onDelete, isToday }: ChallengeCardProps) {
+export function ChallengeCard({ challenge, onComplete, onDelete, onRefreshTask, isToday }: ChallengeCardProps) {
   const [mounted, setMounted] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setMounted(true), 0);
@@ -39,6 +41,16 @@ export function ChallengeCard({ challenge, onComplete, onDelete, isToday }: Chal
     return roundedDays;
   }, [challenge.currentMetric, challenge.targetMetric, challenge.estimatedDays, isQualitative]);
   
+  const handleRefresh = async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      await onRefreshTask(challenge.id);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   const handleComplete = async () => {
     if (completedToday || isCompleting) return;
     
@@ -135,15 +147,29 @@ export function ChallengeCard({ challenge, onComplete, onDelete, isToday }: Chal
               ? "bg-purple-500/10 border-purple-500/20"
               : "bg-emerald-500/5 border-emerald-500/10"
           )}>
-            <div className="absolute top-0 right-0 p-2 opacity-10">
+            <div className="absolute top-0 right-0 p-2 opacity-10 pointer-events-none">
               <Sparkles className={cn("w-8 h-8", isQualitative ? "text-purple-400" : "text-emerald-400")} />
             </div>
-            <p className={cn(
-              "text-[10px] uppercase font-bold tracking-widest mb-2",
-              isQualitative ? "text-purple-400" : "text-emerald-400"
-            )}>
-              {isQualitative ? "Próximo paso IA (1%)" : "Tip de mejora IA"}
-            </p>
+            <div className="flex items-center justify-between mb-2">
+              <p className={cn(
+                "text-[10px] uppercase font-bold tracking-widest",
+                isQualitative ? "text-purple-400" : "text-emerald-400"
+              )}>
+                {isQualitative ? "Próximo paso IA (1%)" : "Tip de mejora IA"}
+              </p>
+              <button
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                className={cn(
+                  "p-1 rounded-md transition-colors",
+                  isRefreshing ? "opacity-50 cursor-not-allowed" : "hover:bg-white/10",
+                  isQualitative ? "text-purple-400" : "text-emerald-400"
+                )}
+                title="Regenerar sugerencia"
+              >
+                <RotateCcw className={cn("w-3 h-3", isRefreshing && "animate-spin")} />
+              </button>
+            </div>
             <p className="text-zinc-100 font-medium leading-relaxed">
               {challenge.nextTask || 'Generando tu próximo desafío...'}
             </p>

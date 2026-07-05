@@ -12,6 +12,10 @@ export async function POST(req: Request) {
     // Allow guest users to use AI generation for testing/trial
     const { challengeName, streak, unit, currentMetric, lastTask, initialContext, targetGoal } = await req.json();
 
+    // Use streak and name to generate a "vibe" or "focus lens" for variety
+    const lenses = ['técnica', 'mentalidad', 'entorno', 'variedad', 'recuperación', 'curiosidad'];
+    const lens = lenses[Math.floor(Math.random() * lenses.length)];
+
     const prompt = `
       Basado en el concepto de "Hábitos Atómicos" de James Clear, donde buscamos mejorar un 1% cada día.
 
@@ -23,7 +27,7 @@ export async function POST(req: Request) {
       ${targetGoal ? `La meta final del usuario es: "${targetGoal}".` : ''}
       ${lastTask ? `La tarea anterior fue: "${lastTask}".` : ''}
 
-      Tu objetivo es generar una sugerencia o micro-tarea para mañana.
+      Tu objetivo es generar una sugerencia o micro-tarea única para mañana, enfocándote hoy especialmente en la ${lens}.
 
       Si el hábito es cuantitativo (tiene métricas numéricas como ${unit}):
       Genera un "Tip de mejora" o una variación creativa para alcanzar los ${currentMetric} ${unit} de mañana. No cambies la métrica, sino CÓMO lograrla con mejor técnica, enfoque o variedad.
@@ -31,7 +35,7 @@ export async function POST(req: Request) {
       Si el hábito es cualitativo (subjetivo):
       Genera la SIGUIENTE tarea específica que represente ese incremento del 1% en dificultad o complejidad.
 
-      Es MUY IMPORTANTE que la sugerencia NO sea repetitiva. Debe ser creativa, variada y ofrecer un nuevo ángulo o desafío pequeño relacionado con el hábito para mantener el interés.
+      Es CRÍTICO que la sugerencia NO sea repetitiva. Debe ser creativa, variada y ofrecer un nuevo ángulo o desafío pequeño relacionado con el hábito para mantener el interés. Evita frases genéricas.
 
       Además, si se proporciona una meta final, estima cuántos días de consistencia (mejora diaria del 1%) faltan para alcanzarla razonablemente. Si el tiempo estimado es superior a 365 días, simplemente indica "un año o más".
 
@@ -39,7 +43,7 @@ export async function POST(req: Request) {
       1. Concreta y accionable.
       2. Muy pequeña (fácil de lograr).
       3. Diferente a la tarea anterior (si se proporciona).
-      4. Escrita en español de forma motivadora y breve.
+      4. Escrita en español de forma motivadora, breve y fresca.
 
       Ejemplo si el hábito es "Escribir un libro":
       Día 0: Escribe una frase.

@@ -25,6 +25,7 @@ export default function Home() {
     stats,
     addChallenge, 
     completeChallenge, 
+    refreshChallengeTask,
     deleteChallenge, 
     isToday 
   } = useOnePercent();
@@ -204,6 +205,7 @@ export default function Home() {
                 challenge={challenge}
                 onComplete={handleCompleteChallenge}
                 onDelete={deleteChallenge}
+                onRefreshTask={refreshChallengeTask}
                 isToday={isToday}
               />
             </motion.div>

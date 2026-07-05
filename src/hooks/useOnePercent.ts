@@ -292,9 +292,21 @@ export function useOnePercent() {
       `Intenta realizar ${name} en un entorno diferente para refrescar tu mente.`,
       `Dedica 2 minutos extra hoy a reflexionar sobre tu progreso con ${name}.`,
       `Busca un micro-detalle en ${name} que puedas optimizar hoy.`,
-      `Prueba a hacer ${name} en un horario ligeramente distinto al de ayer.`
+      `Prueba a hacer ${name} en un horario ligeramente distinto al de ayer.`,
+      `Imagina que eres un principiante total en ${name}; ¿qué observarías hoy?`,
+      `Reduce la velocidad a la mitad mientras haces ${name} para sentir cada movimiento.`,
+      `Haz una pequeña preparación de 1 minuto antes de empezar con ${name}.`,
+      `Elimina una distracción de tu entorno antes de iniciar ${name}.`,
+      `Anota una pequeña victoria que hayas tenido con ${name} recientemente.`,
+      `Hoy, haz ${name} pensando en tu meta final y en por qué empezaste.`,
+      `Prueba a escuchar un tipo de música diferente (o silencio) mientras haces ${name}.`,
+      `Si te sientes con energía, añade un micro-desafío extra de 30 segundos a ${name}.`,
+      `Si hoy es difícil, simplemente haz lo mínimo indispensable de ${name} con orgullo.`,
+      `Encuentra una forma de hacer ${name} un poco más divertido o placentero hoy.`
     ];
-    return fallbacks[streak % fallbacks.length];
+    // Use a slightly more random index to avoid repetition even in fallbacks
+    const randomIndex = (streak + Math.floor(Math.random() * 5)) % fallbacks.length;
+    return fallbacks[randomIndex];
   };
 
   // Actions
@@ -446,6 +458,33 @@ export function useOnePercent() {
     }
   }, [challenges, user, supabase, addPendingSync]);
 
+  const refreshChallengeTask = useCallback(async (id: string) => {
+    const challenge = challenges.find(c => c.id === id);
+    if (!challenge) return;
+
+    const aiData = await fetchNextAITask(
+      challenge.name,
+      challenge.streak,
+      challenge.unit,
+      challenge.currentMetric,
+      challenge.nextTask,
+      challenge.initialContext,
+      challenge.targetGoal
+    );
+
+    const nextTask = aiData?.nextTask || getBetterFallback(challenge.name, challenge.streak + Math.floor(Math.random() * 10));
+    const estimatedDays = aiData?.estimatedDays || challenge.estimatedDays;
+
+    setChallenges(prev => prev.map(c => c.id === id ? { ...c, nextTask, estimatedDays } : c));
+
+    if (user) {
+      await supabase.from('challenges').update({
+        next_task: nextTask,
+        estimated_days: estimatedDays?.toString()
+      }).eq('id', id);
+    }
+  }, [challenges, user, supabase]);
+
   const deleteChallenge = useCallback(async (id: string) => {
     setChallenges(prev => prev.filter(c => c.id !== id));
 
@@ -500,6 +539,7 @@ export function useOnePercent() {
     signOut,
     addChallenge,
     completeChallenge,
+    refreshChallengeTask,
     deleteChallenge,
     isToday
   };
