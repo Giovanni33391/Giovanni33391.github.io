@@ -13,7 +13,11 @@ export async function POST(req: Request) {
     const { challengeName, streak, unit, currentMetric, lastTask, initialContext, targetGoal } = await req.json();
 
     // Use streak and name to generate a "vibe" or "focus lens" for variety
-    const lenses = ['técnica', 'mentalidad', 'entorno', 'variedad', 'recuperación', 'curiosidad'];
+    const lenses = [
+      'técnica', 'mentalidad', 'entorno', 'variedad',
+      'recuperación', 'curiosidad', 'identidad', 'obstáculos',
+      'preparación', 'sentidos', 'celebración', 'social'
+    ];
     const lens = lenses[Math.floor(Math.random() * lenses.length)];
 
     const prompt = `
@@ -27,7 +31,7 @@ export async function POST(req: Request) {
       ${targetGoal ? `La meta final del usuario es: "${targetGoal}".` : ''}
       ${lastTask ? `La tarea anterior fue: "${lastTask}".` : ''}
 
-      Tu objetivo es generar una sugerencia o micro-tarea única para mañana, enfocándote hoy especialmente en la ${lens}.
+      Tu objetivo es generar una sugerencia o micro-tarea única para mañana, enfocándote hoy especialmente en la lente de: **${lens.toUpperCase()}**.
 
       Si el hábito es cuantitativo (tiene métricas numéricas como ${unit}):
       Genera un "Tip de mejora" o una variación creativa para alcanzar los ${currentMetric} ${unit} de mañana. No cambies la métrica, sino CÓMO lograrla con mejor técnica, enfoque o variedad.
@@ -35,7 +39,11 @@ export async function POST(req: Request) {
       Si el hábito es cualitativo (subjetivo):
       Genera la SIGUIENTE tarea específica que represente ese incremento del 1% en dificultad o complejidad.
 
-      Es CRÍTICO que la sugerencia NO sea repetitiva. Debe ser creativa, variada y ofrecer un nuevo ángulo o desafío pequeño relacionado con el hábito para mantener el interés. Evita frases genéricas.
+      Es CRÍTICO que la sugerencia NO sea repetitiva y se sienta fresca.
+      INSTRUCCIONES DE NO REPETICIÓN:
+      1. Si se proporciona "la tarea anterior", la nueva debe ser NOTABLEMENTE diferente en enfoque o acción.
+      2. Usa la lente "${lens}" para forzar un ángulo nuevo (ej. si es técnica, enfócate en la forma; si es entorno, enfócate en el espacio de trabajo; si es identidad, enfócate en cómo se ve alguien que ya domina el hábito).
+      3. Evita consejos obvios o genéricos. Busca el "detalle del 1%".
 
       Además, si se proporciona una meta final, estima cuántos días de consistencia (mejora diaria del 1%) faltan para alcanzarla razonablemente. Si el tiempo estimado es superior a 365 días, simplemente indica "un año o más".
 
@@ -69,10 +77,21 @@ export async function POST(req: Request) {
     });
 
     const content = response.choices[0]?.message?.content?.trim() || '{}';
-    const data = JSON.parse(content);
+
+    // Improved JSON parsing to handle potential Markdown blocks
+    let data;
+    try {
+      const jsonString = content.includes('```json')
+        ? content.split('```json')[1].split('```')[0].trim()
+        : content;
+      data = JSON.parse(jsonString);
+    } catch (e) {
+      console.error('Failed to parse AI JSON:', content);
+      data = { nextTask: "Hoy simplemente repite tu hábito con consciencia plena.", estimatedDays: null };
+    }
 
     return NextResponse.json({
-      nextTask: data.nextTask,
+      nextTask: data.nextTask || "Hoy simplemente repite tu hábito con consciencia plena.",
       estimatedDays: data.estimatedDays
     });
   } catch (error: unknown) {

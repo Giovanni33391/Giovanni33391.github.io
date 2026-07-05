@@ -22,6 +22,8 @@ export default function Home() {
     isLoaded, 
     user,
     signOut,
+    isGuestMode,
+    enterGuestMode,
     stats,
     addChallenge, 
     completeChallenge, 
@@ -33,7 +35,6 @@ export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isProModalOpen, setIsProModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [isGuestMode, setIsGuestMode] = useState(false);
   
   const MAX_FREE_CHALLENGES = 3;
 
@@ -84,12 +85,12 @@ export default function Home() {
   // Prevent hydration mismatch by returning null until loaded
   if (!isLoaded) return null;
 
-  // Show landing page if user is not logged in AND has no challenges AND not in guest mode
-  if (!user && challenges.length === 0 && !isGuestMode) {
+  // Show landing page if user is not logged in and not in guest mode
+  if (!user && !isGuestMode) {
     return (
       <>
         <LandingPage
-          onGetStarted={() => setIsGuestMode(true)}
+          onGetStarted={enterGuestMode}
           onSignIn={() => setIsAuthModalOpen(true)}
         />
         <AuthModal

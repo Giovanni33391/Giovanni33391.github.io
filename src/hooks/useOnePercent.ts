@@ -7,6 +7,7 @@ import type { User } from '@supabase/supabase-js';
 const STORAGE_KEY = 'onepercent_challenges';
 const LOGS_KEY = 'onepercent_logs';
 const PENDING_SYNC_KEY = 'onepercent_pending_sync';
+const GUEST_MODE_KEY = 'onepercent_guest_mode';
 
 export interface ChallengeLog {
   id?: string;
@@ -81,6 +82,10 @@ export function useOnePercent() {
 
   const [isLoaded, setIsLoaded] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [isGuestMode, setIsGuestMode] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem(GUEST_MODE_KEY) === 'true';
+  });
   const [isSyncing, setIsSyncing] = useState(false);
   
   // Need to memoize supabase client inside useOnePercent to avoid dependency issues
@@ -270,10 +275,14 @@ export function useOnePercent() {
 
   // Auth Methods
   const signInWithGoogle = async () => {
+    setIsGuestMode(false);
+    localStorage.removeItem(GUEST_MODE_KEY);
     await supabase.auth.signInWithOAuth({ provider: 'google' });
   };
 
   const signInWithEmail = async (email: string) => {
+    setIsGuestMode(false);
+    localStorage.removeItem(GUEST_MODE_KEY);
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: { emailRedirectTo: window.location.origin },
@@ -281,9 +290,16 @@ export function useOnePercent() {
     if (error) throw error;
   };
 
+  const enterGuestMode = () => {
+    setIsGuestMode(true);
+    localStorage.setItem(GUEST_MODE_KEY, 'true');
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
+    setIsGuestMode(false);
+    localStorage.removeItem(GUEST_MODE_KEY);
   };
 
   const getBetterFallback = (name: string, streak: number) => {
@@ -534,6 +550,8 @@ export function useOnePercent() {
     stats,
     isLoaded,
     user,
+    isGuestMode,
+    enterGuestMode,
     signInWithGoogle,
     signInWithEmail,
     signOut,
