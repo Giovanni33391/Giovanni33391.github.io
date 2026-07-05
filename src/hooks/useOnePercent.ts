@@ -253,12 +253,12 @@ export function useOnePercent() {
   }, [challenges, logs, isLoaded]);
 
   // AI Task Generation Helper
-  const fetchNextAITask = async (challengeName: string, streak: number, unit: string, lastTask?: string, initialContext?: string, targetGoal?: string) => {
+  const fetchNextAITask = async (challengeName: string, streak: number, unit: string, currentMetric: number, lastTask?: string, initialContext?: string, targetGoal?: string) => {
     try {
       const response = await fetch('/api/ai/generate-task', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ challengeName, streak, unit, lastTask, initialContext, targetGoal }),
+        body: JSON.stringify({ challengeName, streak, unit, currentMetric, lastTask, initialContext, targetGoal }),
       });
       const data = await response.json();
       return { nextTask: data.nextTask, estimatedDays: data.estimatedDays };
@@ -311,13 +311,12 @@ export function useOnePercent() {
     let nextTask = undefined;
     let estimatedDays = undefined;
 
-    if (type === 'qualitative') {
-      const aiData = await fetchNextAITask(name, 0, unit, undefined, initialContext, targetGoal);
-      nextTask = aiData?.nextTask;
-      estimatedDays = aiData?.estimatedDays;
-      if (!nextTask) {
-        nextTask = getBetterFallback(name, 0);
-      }
+    const aiData = await fetchNextAITask(name, 0, unit, initialMetric, undefined, initialContext, targetGoal);
+    nextTask = aiData?.nextTask;
+    estimatedDays = aiData?.estimatedDays;
+
+    if (!nextTask) {
+      nextTask = getBetterFallback(name, 0);
     }
 
     const newChallenge: Challenge = {
@@ -379,21 +378,20 @@ export function useOnePercent() {
     let nextTask = challengeToUpdate.nextTask;
     let estimatedDays = challengeToUpdate.estimatedDays;
 
-    if (challengeToUpdate.type === 'qualitative') {
-      const aiData = await fetchNextAITask(
-        challengeToUpdate.name,
-        newStreak,
-        challengeToUpdate.unit,
-        challengeToUpdate.nextTask,
-        challengeToUpdate.initialContext,
-        challengeToUpdate.targetGoal
-      );
-      nextTask = aiData?.nextTask;
-      estimatedDays = aiData?.estimatedDays;
+    const aiData = await fetchNextAITask(
+      challengeToUpdate.name,
+      newStreak,
+      challengeToUpdate.unit,
+      nextMetric,
+      challengeToUpdate.nextTask,
+      challengeToUpdate.initialContext,
+      challengeToUpdate.targetGoal
+    );
+    nextTask = aiData?.nextTask;
+    estimatedDays = aiData?.estimatedDays;
 
-      if (!nextTask) {
-        nextTask = getBetterFallback(challengeToUpdate.name, newStreak);
-      }
+    if (!nextTask) {
+      nextTask = getBetterFallback(challengeToUpdate.name, newStreak);
     }
 
     setChallenges(prev => 

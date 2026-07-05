@@ -114,41 +114,52 @@ export function ChallengeCard({ challenge, onComplete, onDelete, isToday }: Chal
           </Button>
         </div>
 
-        {isQualitative ? (
-          <div className="mb-8 p-4 rounded-xl bg-purple-500/10 border border-purple-500/20 relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-2 opacity-20">
-              <Sparkles className="w-8 h-8 text-purple-400" />
+        <div className="space-y-6 mb-8">
+          {!isQualitative && (
+            <div className="flex items-end justify-between">
+              <div>
+                <p className="text-sm text-zinc-400 mb-1">Objetivo de hoy</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-black text-zinc-100 tracking-tight">
+                    {formatMetric(challenge.currentMetric)}
+                  </span>
+                  <span className="text-zinc-500 font-medium">{challenge.unit}</span>
+                </div>
+              </div>
             </div>
-            <p className="text-[10px] uppercase font-bold text-purple-400 tracking-widest mb-2">Próximo paso IA (1%)</p>
+          )}
+
+          <div className={cn(
+            "p-4 rounded-xl border relative overflow-hidden",
+            isQualitative
+              ? "bg-purple-500/10 border-purple-500/20"
+              : "bg-emerald-500/5 border-emerald-500/10"
+          )}>
+            <div className="absolute top-0 right-0 p-2 opacity-10">
+              <Sparkles className={cn("w-8 h-8", isQualitative ? "text-purple-400" : "text-emerald-400")} />
+            </div>
+            <p className={cn(
+              "text-[10px] uppercase font-bold tracking-widest mb-2",
+              isQualitative ? "text-purple-400" : "text-emerald-400"
+            )}>
+              {isQualitative ? "Próximo paso IA (1%)" : "Tip de mejora IA"}
+            </p>
             <p className="text-zinc-100 font-medium leading-relaxed">
               {challenge.nextTask || 'Generando tu próximo desafío...'}
             </p>
+
             {daysToTarget && (
-              <div className="mt-3 flex items-center gap-1.5 text-[10px] font-bold text-purple-400/80 uppercase tracking-wider">
-                <Sparkles className="w-3 h-3" />
+              <div className={cn(
+                "mt-3 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider",
+                isQualitative ? "text-purple-400/80" : "text-emerald-500/80"
+              )}>
+                {isQualitative ? <Sparkles className="w-3 h-3" /> : <Target className="w-3 h-3" />}
+                {!isQualitative && `Meta: ${challenge.targetMetric} — `}
                 Faltan aprox. {daysToTarget} {!isNaN(Number(daysToTarget)) ? 'días' : ''}
               </div>
             )}
           </div>
-        ) : (
-          <div className="flex items-end justify-between mb-8">
-            <div>
-              <p className="text-sm text-zinc-400 mb-1">Objetivo de hoy</p>
-              <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-black text-zinc-100 tracking-tight">
-                  {formatMetric(challenge.currentMetric)}
-                </span>
-                <span className="text-zinc-500 font-medium">{challenge.unit}</span>
-              </div>
-              {daysToTarget && (
-                <div className="mt-1 flex items-center gap-1 text-[10px] font-bold text-emerald-500/80 uppercase tracking-wider">
-                  <Target className="w-3 h-3" />
-                  Meta: {challenge.targetMetric} — Faltan {daysToTarget} {!isNaN(Number(daysToTarget)) ? 'días' : ''}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        </div>
 
         <Button 
           variant={completedToday ? "success" : (isQualitative ? "default" : "default")}
