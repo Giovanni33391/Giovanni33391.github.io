@@ -75,7 +75,13 @@ export async function POST(req: Request) {
       max_tokens: 150,
     });
 
-    const content = response.choices[0]?.message?.content?.trim() || '{}';
+    let content = response.choices[0]?.message?.content?.trim() || '{}';
+
+    // Robust JSON parsing (handles markdown code blocks)
+    if (content.includes('```')) {
+      content = content.replace(/```json\n?|```/g, '').trim();
+    }
+
     const data = JSON.parse(content);
 
     return NextResponse.json({
