@@ -9,7 +9,6 @@ export async function POST(req: Request) {
       apiKey: process.env.OPENAI_API_KEY,
     });
 
-    // Allow guest users to use AI generation for testing/trial
     const { challengeName, streak, unit, lastTask, initialContext, targetGoal } = await req.json();
 
     const prompt = `
