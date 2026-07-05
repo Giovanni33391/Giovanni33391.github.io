@@ -46,9 +46,9 @@ export default function Home() {
     { label: 'Sáb', value: 6 },
   ];
 
-  const handleCreateChallenge = (name: string, initialMetric: number, unit: string, type: 'quantitative' | 'qualitative', frequency: number[]) => {
-    addChallenge(name, initialMetric, unit, type, frequency);
-    posthog.capture('challenge_created', { name, unit, type, frequency });
+  const handleCreateChallenge = (name: string, initialMetric: number, unit: string, type: 'quantitative' | 'qualitative', frequency: number[], initialContext?: string) => {
+    addChallenge(name, initialMetric, unit, type, frequency, initialContext);
+    posthog.capture('challenge_created', { name, unit, type, frequency, initialContext });
     setIsModalOpen(false);
   };
   
@@ -66,7 +66,7 @@ export default function Home() {
   }
 
   const filteredChallenges = challenges.filter(challenge =>
-    challenge.frequency.includes(selectedDay)
+    (challenge.frequency || [0, 1, 2, 3, 4, 5, 6]).includes(selectedDay)
   );
 
   // Prevent hydration mismatch by returning null until loaded

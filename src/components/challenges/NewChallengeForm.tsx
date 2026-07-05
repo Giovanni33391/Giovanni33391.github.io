@@ -4,7 +4,7 @@ import { Zap, BarChart3, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface NewChallengeFormProps {
-  onSubmit: (name: string, initialMetric: number, unit: string, type: 'quantitative' | 'qualitative', frequency: number[]) => void;
+  onSubmit: (name: string, initialMetric: number, unit: string, type: 'quantitative' | 'qualitative', frequency: number[], initialContext?: string) => void;
   onCancel: () => void;
 }
 
@@ -24,6 +24,7 @@ export function NewChallengeForm({ onSubmit, onCancel }: NewChallengeFormProps) 
   const [unit, setUnit] = useState('');
   const [type, setType] = useState<'quantitative' | 'qualitative'>('quantitative');
   const [frequency, setFrequency] = useState<number[]>([0, 1, 2, 3, 4, 5, 6]);
+  const [initialContext, setInitialContext] = useState('');
 
   const toggleDay = (day: number) => {
     setFrequency(prev =>
@@ -39,7 +40,14 @@ export function NewChallengeForm({ onSubmit, onCancel }: NewChallengeFormProps) 
     e.preventDefault();
     if (!name.trim() || !metric || !unit.trim() || frequency.length === 0) return;
     
-    onSubmit(name.trim(), Number(metric), unit.trim(), type, frequency);
+    onSubmit(
+      name.trim(),
+      Number(metric),
+      unit.trim(),
+      type,
+      frequency,
+      type === 'qualitative' ? initialContext.trim() : undefined
+    );
   };
 
   return (
@@ -172,9 +180,22 @@ export function NewChallengeForm({ onSubmit, onCancel }: NewChallengeFormProps) 
               required
             />
           </div>
+          <div className="space-y-2">
+            <label htmlFor="context" className="text-sm font-medium text-zinc-400">
+              ¿Cuál es tu punto de partida actual?
+            </label>
+            <textarea
+              id="context"
+              placeholder="Ej. Actualmente camino 10 minutos o ya conozco los acordes básicos de la guitarra."
+              value={initialContext}
+              onChange={(e) => setInitialContext(e.target.value)}
+              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all min-h-[100px] resize-none"
+            />
+          </div>
+
           <div className="flex items-start gap-3 p-4 rounded-xl bg-purple-500/5 border border-purple-500/10 text-xs text-purple-300/80 leading-relaxed">
             <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
-            <p>La IA generará tareas un 1% más desafiantes cada día basadas en tu objetivo. No necesitas métricas numéricas.</p>
+            <p>La IA generará tareas un 1% más desafiantes cada día basadas en tu objetivo y punto de partida. No necesitas métricas numéricas.</p>
           </div>
         </div>
       )}

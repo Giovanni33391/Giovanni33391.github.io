@@ -10,7 +10,7 @@ export async function POST(req: Request) {
     });
 
     // Allow guest users to use AI generation for testing/trial
-    const { challengeName, streak, unit, lastTask } = await req.json();
+    const { challengeName, streak, unit, lastTask, initialContext } = await req.json();
 
     const prompt = `
       Basado en el concepto de "Hábitos Atómicos" de James Clear, donde buscamos mejorar un 1% cada día.
@@ -18,9 +18,10 @@ export async function POST(req: Request) {
       El usuario tiene un hábito llamado: "${challengeName}".
       Actualmente tiene una racha de ${streak} días.
       La unidad de medida es: "${unit}".
+      ${initialContext ? `El punto de partida o base actual del usuario es: "${initialContext}".` : ''}
       ${lastTask ? `La tarea anterior fue: "${lastTask}".` : ''}
 
-      Por favor, genera la SIGUIENTE tarea específica para mañana que represente un incremento del 1% respecto al día anterior.
+      Por favor, genera la SIGUIENTE tarea específica para mañana que represente un incremento del 1% respecto al progreso actual.
       Es MUY IMPORTANTE que la tarea NO sea repetitiva. Debe ser creativa, variada y ofrecer un nuevo ángulo o desafío pequeño relacionado con el hábito para mantener el interés.
 
       La tarea debe ser:
