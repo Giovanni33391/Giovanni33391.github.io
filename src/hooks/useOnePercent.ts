@@ -252,8 +252,12 @@ export function useOnePercent() {
   // Actions
   const addChallenge = useCallback(async (name: string, initialMetric: number, unit: string, type: 'quantitative' | 'qualitative' = 'quantitative') => {
     let nextTask = undefined;
-    if (type === 'qualitative' && user) {
-      nextTask = await fetchNextAITask(name, 0, unit);
+    if (type === 'qualitative') {
+      if (user) {
+        nextTask = await fetchNextAITask(name, 0, unit);
+      } else {
+        nextTask = "Identifica una pequeña mejora para mañana.";
+      }
     }
 
     const newChallenge: Challenge = {
@@ -303,8 +307,12 @@ export function useOnePercent() {
     const now = new Date().toISOString();
 
     let nextTask = challengeToUpdate.nextTask;
-    if (challengeToUpdate.type === 'qualitative' && user) {
-      nextTask = await fetchNextAITask(challengeToUpdate.name, newStreak, challengeToUpdate.unit);
+    if (challengeToUpdate.type === 'qualitative') {
+      if (user) {
+        nextTask = await fetchNextAITask(challengeToUpdate.name, newStreak, challengeToUpdate.unit);
+      } else {
+        nextTask = "¡Buen trabajo! Mañana busca otro pequeño avance del 1%.";
+      }
     }
 
     setChallenges(prev => 
