@@ -527,7 +527,7 @@ export function LandingPage({ onGetStarted, onSignIn }: LandingPageProps) {
             Únete a otros que ya están hackeando su crecimiento diario. Sin fricciones, sin complicaciones.
           </p>
           <Button size="lg" className="h-16 px-12 text-xl rounded-2xl" onClick={onGetStarted}>
-            Empieza gratis hoy
+            Empezar ahora
           </Button>
         </div>
       </section>
