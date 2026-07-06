@@ -80,6 +80,11 @@ export default function Home() {
     posthog.capture('habit_completed', { challenge_id: id });
   }
 
+  const handleRefreshChallenge = (id: string) => {
+    refreshChallengeTask(id);
+    posthog.capture('habit_task_refreshed', { challenge_id: id });
+  }
+
   const filteredChallenges = challenges.filter(challenge =>
     (challenge.frequency || [0, 1, 2, 3, 4, 5, 6]).includes(selectedDay)
   );
@@ -303,6 +308,7 @@ export default function Home() {
                       challenge={challenge}
                       onComplete={handleCompleteChallenge}
                       onDelete={deleteChallenge}
+                      onRefresh={handleRefreshChallenge}
                       isToday={isToday}
                     />
                   </motion.div>

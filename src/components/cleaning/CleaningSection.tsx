@@ -17,13 +17,20 @@ export const CleaningSection = () => {
   const getTaskStatus = (task: { lastCleanedDate: string; frequencyDays: number }) => {
     const lastCleaned = new Date(task.lastCleanedDate);
     const now = new Date();
-    const diffTime = Math.abs(now.getTime() - lastCleaned.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    const progress = Math.max(0, Math.min(100, (diffDays / task.frequencyDays) * 100));
-    const isOverdue = diffDays > task.frequencyDays;
+    // Calculate next cleaning date
+    const nextCleaning = new Date(lastCleaned);
+    nextCleaning.setDate(lastCleaned.getDate() + task.frequencyDays);
 
-    return { progress, isOverdue };
+    // Calculate progress (cleanliness level)
+    // 100% when just cleaned, 0% when next cleaning is due
+    const totalTime = task.frequencyDays * 24 * 60 * 60 * 1000;
+    const timePassed = now.getTime() - lastCleaned.getTime();
+
+    const progress = Math.max(0, Math.min(100, 100 - (timePassed / totalTime) * 100));
+    const isOverdue = now.getTime() > nextCleaning.getTime();
+
+    return { progress, isOverdue, nextCleaning };
   };
 
   const handleAddTask = (e: React.FormEvent) => {
@@ -92,7 +99,7 @@ export const CleaningSection = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {tasks.map((task) => {
-          const { progress, isOverdue } = getTaskStatus(task);
+          const { progress, isOverdue, nextCleaning } = getTaskStatus(task);
           return (
             <motion.div
               key={task.id}
@@ -117,21 +124,24 @@ export const CleaningSection = () => {
 
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
-                  <span className={isOverdue ? "text-rose-400" : "text-zinc-500"}>
-                    {isOverdue ? 'Toca Limpiar' : 'Limpio'}
+                  <span className={isOverdue ? "text-rose-400" : "text-emerald-500"}>
+                    {isOverdue ? '¡Toca Limpiar!' : 'Estado: Limpio'}
                   </span>
-                  <span className="text-zinc-500">{(100 - progress).toFixed(0)}% restante</span>
+                  <span className="text-zinc-500">{progress.toFixed(0)}% higiene</span>
                 </div>
                 <div className="h-3 bg-zinc-950 rounded-full overflow-hidden border border-zinc-800/50">
                   <motion.div
                     initial={{ width: 0 }}
-                    animate={{ width: `${100 - progress}%` }}
+                    animate={{ width: `${progress}%` }}
                     className={cn(
                       "h-full rounded-full transition-all",
-                      isOverdue ? "bg-rose-500" : progress > 70 ? "bg-amber-500" : "bg-emerald-500"
+                      isOverdue ? "bg-rose-500" : progress < 30 ? "bg-amber-500" : "bg-emerald-500"
                     )}
                   />
                 </div>
+                <p className="text-[10px] text-zinc-500 text-right italic">
+                  Próxima limpieza: {nextCleaning.toLocaleDateString()}
+                </p>
               </div>
 
               <Button
