@@ -138,10 +138,25 @@ export function useTraining() {
         ...prev,
         exercises: prev.exercises.map(ex => {
           if (ex.id !== exerciseId) return ex;
-          return {
-            ...ex,
-            sets: ex.sets.map(s => s.id === setId ? { ...s, ...updates } : s)
-          };
+
+          const setIndex = ex.sets.findIndex(s => s.id === setId);
+          let newSets = ex.sets.map(s => s.id === setId ? { ...s, ...updates } : s);
+
+          // Auto-fill logic for the first set
+          if (setIndex === 0 && (updates.weight !== undefined || updates.reps !== undefined)) {
+            newSets = newSets.map((s, idx) => {
+              if (idx > 0 && !s.completed) {
+                return {
+                  ...s,
+                  weight: updates.weight !== undefined ? updates.weight : s.weight,
+                  reps: updates.reps !== undefined ? updates.reps : s.reps
+                };
+              }
+              return s;
+            });
+          }
+
+          return { ...ex, sets: newSets };
         })
       };
     });
@@ -164,7 +179,7 @@ export function useTraining() {
         });
         if (res.ok) {
           const data = await res.json();
-          updatedExercises[i] = { ...ex, suggestion: data.suggestion };
+          updatedExercises[i] = { ...ex, suggestion: data };
         }
       } catch (err) {
         console.error('Failed to fetch suggestion for', ex.name, err);
@@ -173,7 +188,7 @@ export function useTraining() {
     return updatedExercises;
   };
 
-  const finishWorkout = useCallback(async (duration: number) => {
+  const finishWorkout = useCallback(async (duration: number, selectedSuggestions: Record<string, 'weight' | 'reps' | null>) => {
     if (!activeRoutine) return;
     const now = new Date().toISOString();
     let totalVolume = 0;
@@ -193,61 +208,94 @@ export function useTraining() {
 
     setSessions(prev => [newSession, ...prev]);
 
-    // Update routine state locally first
-    let updatedRoutine: Routine | null = null;
     const updatedRoutines = routines.map(r => {
       if (r.id !== activeRoutine.id) return r;
-      updatedRoutine = {
-        ...r,
-        streak: r.streak + 1,
-        lastCompletedDate: now,
-        isRefreshingAI: true
-      };
-      return updatedRoutine;
-    });
-    setRoutines(updatedRoutines);
-    setActiveRoutine(null);
 
-    // Fetch AI Suggestions in background
-    if (updatedRoutine) {
-      const suggestedExercises = await fetchTrainingSuggestions(updatedRoutine, [newSession, ...sessions]);
-      setRoutines(prev => prev.map(r => r.id === activeRoutine.id ? { ...r, exercises: suggestedExercises, isRefreshingAI: false } : r));
+      const nextExercises = r.exercises.map(ex => {
+        const choice = selectedSuggestions[ex.id];
+        if (!choice || !ex.suggestion?.options) return ex;
 
-      if (user) {
-        await supabase.from('routines').update({
-          streak: (updatedRoutine as Routine).streak,
-          last_completed_date: (updatedRoutine as Routine).lastCompletedDate,
-          exercises: suggestedExercises
-        }).eq('id', (updatedRoutine as Routine).id);
+        const nextVal = ex.suggestion.options[choice].value;
+        const nextMetric = choice === 'weight' ? nextVal : ex.currentMetric;
+        const nextReps = choice === 'reps' ? nextVal : ex.targetReps;
 
-        await supabase.from('workout_sessions').insert({
-          id: newSession.id,
-          user_id: user.id,
-          routine_id: newSession.routineId,
-          routine_name: newSession.routineName,
-          date: newSession.date,
-          duration: newSession.duration,
-          total_volume: newSession.totalVolume,
-          exercises: newSession.exercises
-        });
-      }
-    }
-  }, [activeRoutine, routines, sessions, user, supabase]);
-
-  const applySuggestion = useCallback(async (routineId: string, exerciseId: string) => {
-    setRoutines(prev => prev.map(r => {
-      if (r.id !== routineId) return r;
-      const updatedExercises = r.exercises.map(ex => {
-        if (ex.id !== exerciseId || !ex.suggestion) return ex;
         return {
           ...ex,
-          currentMetric: ex.suggestion.weight ?? ex.currentMetric,
-          targetReps: ex.suggestion.reps ?? ex.targetReps,
+          currentMetric: nextMetric,
+          targetReps: nextReps,
           suggestion: undefined,
           sets: ex.sets.map(s => ({
             ...s,
-            weight: ex.suggestion?.weight ?? s.weight,
-            reps: ex.suggestion?.reps ?? s.reps,
+            weight: nextMetric,
+            reps: nextReps,
+            completed: false
+          }))
+        };
+      });
+
+      const updated = {
+        ...r,
+        streak: r.streak + 1,
+        lastCompletedDate: now,
+        exercises: nextExercises,
+        isRefreshingAI: true
+      };
+
+      // Fetch fresh suggestions for the NEXT session in background
+      fetchTrainingSuggestions(updated, [newSession, ...sessions]).then(suggestedExs => {
+        setRoutines(prev => prev.map(pr => pr.id === updated.id ? { ...pr, exercises: suggestedExs, isRefreshingAI: false } : pr));
+        if (user) {
+          supabase.from('routines').update({ exercises: suggestedExs }).eq('id', updated.id).then();
+        }
+      });
+
+      return updated;
+    });
+
+    setRoutines(updatedRoutines);
+    setActiveRoutine(null);
+
+    if (user) {
+      const routine = updatedRoutines.find(r => r.id === activeRoutine.id);
+      if (routine) {
+        await supabase.from('routines').update({
+          streak: routine.streak,
+          last_completed_date: routine.lastCompletedDate,
+          exercises: routine.exercises
+        }).eq('id', routine.id);
+      }
+
+      await supabase.from('workout_sessions').insert({
+        id: newSession.id,
+        user_id: user.id,
+        routine_id: newSession.routineId,
+        routine_name: newSession.routineName,
+        date: newSession.date,
+        duration: newSession.duration,
+        total_volume: newSession.totalVolume,
+        exercises: newSession.exercises
+      });
+    }
+  }, [activeRoutine, routines, sessions, user, supabase]);
+
+  const applySuggestion = useCallback(async (routineId: string, exerciseId: string, choice: 'weight' | 'reps') => {
+    setRoutines(prev => prev.map(r => {
+      if (r.id !== routineId) return r;
+      const updatedExercises = r.exercises.map(ex => {
+        if (ex.id !== exerciseId || !ex.suggestion?.options) return ex;
+        const nextVal = ex.suggestion.options[choice].value;
+        const nextMetric = choice === 'weight' ? nextVal : ex.currentMetric;
+        const nextReps = choice === 'reps' ? nextVal : ex.targetReps;
+
+        return {
+          ...ex,
+          currentMetric: nextMetric,
+          targetReps: nextReps,
+          suggestion: undefined,
+          sets: ex.sets.map(s => ({
+            ...s,
+            weight: nextMetric,
+            reps: nextReps,
             completed: false
           }))
         };

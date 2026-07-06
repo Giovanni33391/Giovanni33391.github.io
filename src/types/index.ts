@@ -45,8 +45,10 @@ export interface Exercise {
   sets: ExerciseSet[];
   notes?: string;
   suggestion?: {
-    weight?: number;
-    reps?: number;
+    options?: {
+      weight: { value: number; label: string };
+      reps: { value: number; label: string };
+    };
     reason?: string;
   };
 }

@@ -40,7 +40,7 @@ export const TrainingSection = () => {
             <ActiveWorkout
               routine={activeRoutine}
               onUpdateSet={updateSet}
-              onFinish={finishWorkout}
+              onFinish={(duration, selections) => finishWorkout(duration, selections)}
               onCancel={cancelWorkout}
             />
           </motion.div>

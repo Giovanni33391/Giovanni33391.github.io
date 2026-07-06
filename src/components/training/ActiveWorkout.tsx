@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Save, X, Timer, Coffee, Zap, TrendingUp } from 'lucide-react';
+import { CheckCircle2, Save, X, Timer, Coffee, Zap, TrendingUp, BarChart3, Clock, Trophy } from 'lucide-react';
 import { Routine, ExerciseSet, TrainingMode } from '@/types';
 import { Button } from '../ui/Button';
 
 interface ActiveWorkoutProps {
   routine: Routine;
   onUpdateSet: (exId: string, setId: string, updates: Partial<ExerciseSet>) => void;
-  onFinish: (duration: number) => void;
+  onFinish: (duration: number, selections: Record<string, 'weight' | 'reps' | null>) => void;
   onCancel: () => void;
 }
 
@@ -27,6 +27,8 @@ export const ActiveWorkout = ({ routine, onUpdateSet, onFinish, onCancel }: Acti
   const [restSeconds, setRestSeconds] = useState(0);
   const [isResting, setIsResting] = useState(false);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
+  const [showSummary, setShowSummary] = useState(false);
+  const [selections, setSelections] = useState<Record<string, 'weight' | 'reps' | null>>({});
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const restTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -61,7 +63,6 @@ export const ActiveWorkout = ({ routine, onUpdateSet, onFinish, onCancel }: Acti
 
   const handleSetToggle = (exerciseId: string, setId: string, currentlyCompleted: boolean, mode: TrainingMode) => {
     onUpdateSet(exerciseId, setId, { completed: !currentlyCompleted });
-
     if (!currentlyCompleted) {
       setRestSeconds(GET_REST_TIME(mode));
       setIsResting(true);
@@ -71,12 +72,94 @@ export const ActiveWorkout = ({ routine, onUpdateSet, onFinish, onCancel }: Acti
     }
   };
 
+  const totalVolume = routine.exercises.reduce((acc, ex) => {
+    return acc + ex.sets.reduce((sAcc, s) => s.completed ? sAcc + (s.weight * s.reps) : sAcc, 0);
+  }, 0);
+
   const allSetsCompleted = routine.exercises.every(ex => ex.sets.every(s => s.completed));
   const currentExercise = routine.exercises[currentExerciseIndex];
 
+  if (showSummary) {
+    return (
+      <div className="fixed inset-0 z-[70] bg-zinc-950 flex flex-col p-6 overflow-y-auto no-scrollbar">
+        <div className="max-w-md mx-auto w-full space-y-8 pb-20">
+          <div className="text-center space-y-2 pt-8">
+            <div className="w-20 h-20 bg-emerald-500/10 rounded-[2rem] flex items-center justify-center mx-auto mb-4 border border-emerald-500/20">
+              <Trophy className="w-10 h-10 text-emerald-500" />
+            </div>
+            <h2 className="text-4xl font-black text-white tracking-tight">¡Misión Cumplida!</h2>
+            <p className="text-zinc-500 font-medium">Resumen de tu evolución de hoy.</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-zinc-900/50 border border-zinc-800 p-5 rounded-[2rem]">
+              <BarChart3 className="w-5 h-5 text-emerald-500 mb-2" />
+              <div className="text-2xl font-black text-white leading-none">{totalVolume.toLocaleString()}</div>
+              <div className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mt-1">Volumen Total (kg)</div>
+            </div>
+            <div className="bg-zinc-900/50 border border-zinc-800 p-5 rounded-[2rem]">
+              <Clock className="w-5 h-5 text-purple-500 mb-2" />
+              <div className="text-2xl font-black text-white leading-none">{formatTime(seconds)}</div>
+              <div className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mt-1">Tiempo Total</div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-xs font-black text-zinc-500 uppercase tracking-[0.2em]">Próximo Entrenamiento</h3>
+            {routine.exercises.map((ex) => (
+              <div key={ex.id} className="bg-zinc-900 border border-zinc-800 rounded-[2rem] p-6 space-y-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="font-black text-white">{ex.name}</h4>
+                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">IA Sugiere: {ex.suggestion?.reason || "Mantener ritmo"}</p>
+                  </div>
+                  <Zap className="w-4 h-4 text-emerald-500 fill-emerald-500" />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setSelections(prev => ({ ...prev, [ex.id]: prev[ex.id] === 'weight' ? null : 'weight' }))}
+                    className={`p-4 rounded-2xl border text-left transition-all ${
+                      selections[ex.id] === 'weight'
+                      ? "bg-emerald-500 border-emerald-400 text-zinc-950 shadow-lg shadow-emerald-500/20"
+                      : "bg-zinc-950 border-zinc-800 text-zinc-500 hover:border-zinc-700"
+                    }`}
+                  >
+                    <div className="text-[10px] font-black uppercase tracking-widest mb-1 opacity-60">Subir Peso</div>
+                    <div className="text-xl font-black">{ex.suggestion?.options?.weight.label || `+1.25 ${ex.unit}`}</div>
+                  </button>
+                  <button
+                    onClick={() => setSelections(prev => ({ ...prev, [ex.id]: prev[ex.id] === 'reps' ? null : 'reps' }))}
+                    className={`p-4 rounded-2xl border text-left transition-all ${
+                      selections[ex.id] === 'reps'
+                      ? "bg-emerald-500 border-emerald-400 text-zinc-950 shadow-lg shadow-emerald-500/20"
+                      : "bg-zinc-950 border-zinc-800 text-zinc-500 hover:border-zinc-700"
+                    }`}
+                  >
+                    <div className="text-[10px] font-black uppercase tracking-widest mb-1 opacity-60">Subir Reps</div>
+                    <div className="text-xl font-black">{ex.suggestion?.options?.reps.label || "+1 rep"}</div>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-zinc-950 via-zinc-950 to-transparent">
+          <Button
+            className="w-full py-7 rounded-[2rem] font-black text-xl bg-emerald-500 text-zinc-950 shadow-2xl shadow-emerald-500/20"
+            onClick={() => onFinish(seconds, selections)}
+          >
+            GUARDAR Y EVOLUCIONAR
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 z-[60] bg-zinc-950 flex flex-col font-sans selection:bg-emerald-500/30">
-      {/* Header with Glassmorphism */}
+      {/* Header */}
       <div className="bg-zinc-900/50 backdrop-blur-xl border-b border-zinc-800/50 p-4 flex items-center justify-between sticky top-0 z-10">
         <div>
           <h2 className="text-xl font-black text-white tracking-tight">{routine.name}</h2>
@@ -96,7 +179,7 @@ export const ActiveWorkout = ({ routine, onUpdateSet, onFinish, onCancel }: Acti
         </Button>
       </div>
 
-      {/* Dynamic Rest Timer Overlay */}
+      {/* Rest Timer */}
       <AnimatePresence>
         {isResting && (
           <motion.div
@@ -114,163 +197,63 @@ export const ActiveWorkout = ({ routine, onUpdateSet, onFinish, onCancel }: Acti
                 {formatTime(restSeconds)}
               </div>
               <div className="flex gap-2 w-full mt-4">
-                <Button
-                  variant="ghost"
-                  className="flex-1 bg-white/5 text-white font-black text-xs hover:bg-white/10 rounded-2xl py-6"
-                  onClick={() => setRestSeconds(s => s + 15)}
-                >
-                  +15s
-                </Button>
-                <Button
-                  variant="default"
-                  className="flex-1 bg-emerald-500 text-zinc-950 font-black text-xs hover:bg-emerald-400 rounded-2xl py-6 shadow-lg shadow-emerald-500/20"
-                  onClick={() => setIsResting(false)}
-                >
-                  SALTAR
-                </Button>
+                <Button variant="ghost" className="flex-1 bg-white/5 text-white font-black text-xs hover:bg-white/10 rounded-2xl py-6" onClick={() => setRestSeconds(s => s + 15)}>+15s</Button>
+                <Button variant="default" className="flex-1 bg-emerald-500 text-zinc-950 font-black text-xs hover:bg-emerald-400 rounded-2xl py-6 shadow-lg shadow-emerald-500/20" onClick={() => setIsResting(false)}>SALTAR</Button>
               </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Main Content Area */}
+      {/* Exercise View */}
       <div className="flex-1 overflow-y-auto no-scrollbar pb-32">
-         {/* Exercise Navigation Dots */}
          <div className="flex justify-center gap-2 py-6 px-4">
             {routine.exercises.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrentExerciseIndex(i)}
-                className={`h-1.5 transition-all rounded-full ${
-                  i === currentExerciseIndex ? "w-8 bg-emerald-500" : "w-1.5 bg-zinc-800"
-                }`}
-              />
+              <button key={i} onClick={() => setCurrentExerciseIndex(i)} className={`h-1.5 transition-all rounded-full ${i === currentExerciseIndex ? "w-8 bg-emerald-500" : "w-1.5 bg-zinc-800"}`} />
             ))}
          </div>
 
-         {/* Current Exercise View */}
-         <motion.div
-            key={currentExercise?.id}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="px-4 space-y-8"
-         >
+         <motion.div key={currentExercise?.id} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="px-4 space-y-8">
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em]">
                  <Zap className="w-3 h-3 fill-emerald-500" />
                  {currentExercise?.mode || 'Hypertrophy'}
               </div>
-              <h3 className="text-4xl font-black text-white tracking-tight leading-none">
-                {currentExercise?.name}
-              </h3>
-              <p className="text-zinc-500 text-sm font-medium">
-                Objetivo: {currentExercise?.targetSets} series de {currentExercise?.targetReps} reps
-              </p>
+              <h3 className="text-4xl font-black text-white tracking-tight leading-none">{currentExercise?.name}</h3>
+              <p className="text-zinc-500 text-sm font-medium">Objetivo: {currentExercise?.targetSets} series de {currentExercise?.targetReps} reps</p>
             </div>
 
             <div className="space-y-3">
-              <div className="grid grid-cols-12 gap-2 px-4 text-[10px] font-black text-zinc-600 uppercase tracking-widest">
-                <div className="col-span-2">Set</div>
-                <div className="col-span-4 text-center">Peso ({currentExercise?.unit})</div>
-                <div className="col-span-4 text-center">Reps</div>
-                <div className="col-span-2 text-right">OK</div>
-              </div>
-
               {currentExercise?.sets.map((set, idx) => (
-                <motion.div
-                  key={set.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.05 }}
-                  className={`grid grid-cols-12 gap-2 p-4 rounded-[1.5rem] border transition-all ${
-                    set.completed
-                    ? "bg-emerald-500/10 border-emerald-500/40 shadow-lg shadow-emerald-500/5"
-                    : "bg-zinc-900 border-zinc-800/50"
-                  }`}
-                >
+                <div key={set.id} className={`grid grid-cols-12 gap-2 p-4 rounded-[1.5rem] border transition-all ${set.completed ? "bg-emerald-500/10 border-emerald-500/40" : "bg-zinc-900 border-zinc-800/50"}`}>
                   <div className="col-span-2 flex items-center font-black text-lg text-zinc-500">{idx + 1}</div>
-
                   <div className="col-span-4 flex items-center justify-center">
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={set.weight}
-                      onChange={(e) => onUpdateSet(currentExercise.id, set.id, { weight: parseFloat(e.target.value) })}
-                      className="w-full bg-transparent text-center text-2xl font-black text-white focus:outline-none tabular-nums"
-                    />
+                    <input type="number" step="0.1" value={set.weight} onChange={(e) => onUpdateSet(currentExercise.id, set.id, { weight: parseFloat(e.target.value) })} className="w-full bg-transparent text-center text-2xl font-black text-white focus:outline-none tabular-nums" />
                   </div>
-
                   <div className="col-span-4 flex items-center justify-center">
-                    <input
-                      type="number"
-                      value={set.reps}
-                      onChange={(e) => onUpdateSet(currentExercise.id, set.id, { reps: parseInt(e.target.value) })}
-                      className="w-full bg-transparent text-center text-2xl font-black text-white focus:outline-none tabular-nums"
-                    />
+                    <input type="number" value={set.reps} onChange={(e) => onUpdateSet(currentExercise.id, set.id, { reps: parseInt(e.target.value) })} className="w-full bg-transparent text-center text-2xl font-black text-white focus:outline-none tabular-nums" />
                   </div>
-
                   <div className="col-span-2 flex justify-end">
-                    <button
-                      onClick={() => handleSetToggle(currentExercise.id, set.id, set.completed, currentExercise.mode)}
-                      className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
-                        set.completed
-                        ? "bg-emerald-500 text-zinc-950 shadow-xl shadow-emerald-500/40 scale-110"
-                        : "bg-zinc-800 text-zinc-600 hover:bg-zinc-700"
-                      }`}
-                    >
-                      <CheckCircle2 className="w-6 h-6 stroke-[3]" />
-                    </button>
+                    <button onClick={() => handleSetToggle(currentExercise.id, set.id, set.completed, currentExercise.mode)} className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${set.completed ? "bg-emerald-500 text-zinc-950 shadow-xl" : "bg-zinc-800 text-zinc-600"}`}><CheckCircle2 className="w-6 h-6 stroke-[3]" /></button>
                   </div>
-                </motion.div>
+                </div>
               ))}
             </div>
 
-            {/* AI Coaching Tips could go here */}
             <div className="bg-zinc-900/30 border border-zinc-800/50 rounded-3xl p-6 flex gap-4 items-start">
-               <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
-                  <TrendingUp className="w-5 h-5 text-emerald-500" />
-               </div>
-               <div>
-                  <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Tip de Rendimiento</p>
-                  <p className="text-sm text-zinc-300 font-medium leading-relaxed">
-                    Mantén una fase excéntrica controlada de 2-3 segundos para maximizar la tensión mecánica.
-                  </p>
-               </div>
+               <TrendingUp className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+               <p className="text-sm text-zinc-300 font-medium leading-relaxed">Controla la fase excéntrica (bajada) para maximizar hipertrofia.</p>
             </div>
          </motion.div>
       </div>
 
-      {/* Navigation & Action Footer */}
+      {/* Footer */}
       <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-zinc-950 via-zinc-950 to-transparent flex gap-3">
         <div className="flex gap-2 bg-zinc-900 border border-zinc-800 p-1.5 rounded-2xl flex-1">
-           <button
-            disabled={currentExerciseIndex === 0}
-            onClick={() => setCurrentExerciseIndex(i => i - 1)}
-            className="flex-1 py-3 text-[10px] font-black uppercase tracking-widest text-zinc-500 disabled:opacity-20"
-           >
-            Anterior
-           </button>
-           <div className="w-px h-full bg-zinc-800" />
-           <button
-            disabled={currentExerciseIndex === routine.exercises.length - 1}
-            onClick={() => setCurrentExerciseIndex(i => i + 1)}
-            className="flex-1 py-3 text-[10px] font-black uppercase tracking-widest text-emerald-500 disabled:opacity-20"
-           >
-            Siguiente
-           </button>
+           <button disabled={currentExerciseIndex === 0} onClick={() => setCurrentExerciseIndex(i => i - 1)} className="flex-1 py-3 text-[10px] font-black uppercase tracking-widest text-zinc-500 disabled:opacity-20">Anterior</button>
+           <button disabled={currentExerciseIndex === routine.exercises.length - 1} onClick={() => setCurrentExerciseIndex(i => i + 1)} className="flex-1 py-3 text-[10px] font-black uppercase tracking-widest text-emerald-500 disabled:opacity-20">Siguiente</button>
         </div>
-
-        <Button
-          onClick={() => onFinish(seconds)}
-          className={`px-8 rounded-2xl font-black text-sm uppercase tracking-widest transition-all ${
-            allSetsCompleted ? "bg-emerald-500 text-zinc-950" : "bg-zinc-800 text-zinc-500"
-          }`}
-          disabled={!allSetsCompleted}
-        >
-          <Save className="w-4 h-4 mr-2" />
-          Finalizar
-        </Button>
+        <Button onClick={() => setShowSummary(true)} className={`px-8 rounded-2xl font-black text-sm uppercase tracking-widest ${allSetsCompleted ? "bg-emerald-500 text-zinc-950" : "bg-zinc-800 text-zinc-500"}`} disabled={!allSetsCompleted}>RESUMEN</Button>
       </div>
     </div>
   );

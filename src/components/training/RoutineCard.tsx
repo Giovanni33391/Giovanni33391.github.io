@@ -9,7 +9,7 @@ interface RoutineCardProps {
   routine: Routine;
   onStart: (routine: Routine) => void;
   onDelete: (id: string) => void;
-  onApplySuggestion: (routineId: string, exerciseId: string) => void;
+  onApplySuggestion: (routineId: string, exerciseId: string, choice: 'weight' | 'reps') => void;
   onIgnoreSuggestion: (routineId: string, exerciseId: string) => void;
 }
 
@@ -109,25 +109,26 @@ export const RoutineCard = ({ routine, onStart, onDelete, onApplySuggestion, onI
                           <Zap className="w-4 h-4 text-emerald-400 fill-emerald-400" />
                           <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Recomendación IA</span>
                        </div>
-                       <div className="text-xs font-black text-white bg-zinc-800 px-2.5 py-1 rounded-full border border-zinc-700">
-                          {ex.suggestion.weight && `${ex.suggestion.weight}${ex.unit}`}
-                          {ex.suggestion.weight && ex.suggestion.reps && ' / '}
-                          {ex.suggestion.reps && `${ex.suggestion.reps} reps`}
-                       </div>
                     </div>
                     <p className="text-xs text-zinc-400 font-medium mb-4 leading-relaxed italic">
                       &quot;{ex.suggestion.reason}&quot;
                     </p>
                     <div className="flex gap-2">
                        <button
-                        onClick={() => onApplySuggestion(routine.id, ex.id)}
+                        onClick={() => onApplySuggestion(routine.id, ex.id, 'weight')}
                         className="flex-1 bg-emerald-500 text-zinc-950 text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl hover:bg-emerald-400 transition-all flex items-center justify-center gap-2"
                        >
-                        <Check className="w-3 h-3 stroke-[4]" /> Aplicar
+                        {ex.suggestion.options?.weight.label || '+ Peso'}
+                       </button>
+                       <button
+                        onClick={() => onApplySuggestion(routine.id, ex.id, 'reps')}
+                        className="flex-1 bg-zinc-800 text-white text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl hover:bg-zinc-700 transition-all flex items-center justify-center gap-2"
+                       >
+                        {ex.suggestion.options?.reps.label || '+ Reps'}
                        </button>
                        <button
                         onClick={() => onIgnoreSuggestion(routine.id, ex.id)}
-                        className="bg-zinc-800 text-zinc-400 p-2.5 rounded-xl hover:bg-zinc-700 transition-all"
+                        className="bg-zinc-950 text-zinc-600 p-2.5 rounded-xl hover:bg-zinc-900 transition-all"
                        >
                         <X className="w-4 h-4" />
                        </button>

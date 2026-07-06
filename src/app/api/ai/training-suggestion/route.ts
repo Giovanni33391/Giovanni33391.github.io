@@ -10,58 +10,47 @@ export async function POST(req: Request) {
     const { exercise, sessionHistory, mode } = body as { exercise: Exercise, sessionHistory: WorkoutSession[], mode: string };
 
     if (!process.env.OPENAI_API_KEY) {
-      // Basic heuristic fallback if no API key
-      const lastSession = sessionHistory[0];
-      const completedSets = lastSession?.exercises.find(e => e.name === exercise.name)?.sets.filter(s => s.completed).length || 0;
-
-      let suggestedWeight = exercise.currentMetric;
-      const suggestedReps = exercise.targetReps;
-      let reason = "Basado en tu última sesión.";
-
-      if (completedSets >= exercise.targetSets) {
-        suggestedWeight = Number((exercise.currentMetric * 1.025).toFixed(1)); // 2.5% increase
-        reason = "¡Excelente trabajo! Has completado todas las series. Es hora de subir un poco el peso.";
-      }
+      // Direct heuristic if no API key
+      const weightOption = Number((exercise.currentMetric + (exercise.unit === 'kg' ? 1.25 : 2.5)).toFixed(2));
+      const repOption = exercise.targetReps + 1;
 
       return NextResponse.json({
-        suggestion: { weight: suggestedWeight, reps: suggestedReps, reason }
+        options: {
+          weight: { value: weightOption, label: `+${exercise.unit === 'kg' ? '1.25' : '2.5'} ${exercise.unit}` },
+          reps: { value: repOption, label: "+1 rep" }
+        },
+        reason: "Buen rendimiento."
       });
     }
 
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
     const prompt = `
-      Eres un entrenador experto en fitness. Analiza el desempeño del usuario en el ejercicio "${exercise.name}".
-      Modo de entrenamiento: ${mode}.
-      Objetivo: ${exercise.targetSets} series de ${exercise.targetReps} reps con ${exercise.currentMetric}${exercise.unit}.
+      Eres un entrenador experto. Analiza: ${exercise.name} (${mode}).
+      Actual: ${exercise.targetSets}x${exercise.targetReps} @ ${exercise.currentMetric}${exercise.unit}.
+      Desempeño: ${JSON.stringify(sessionHistory.slice(0, 1))}
 
-      Últimas sesiones (más reciente primero):
-      ${JSON.stringify(sessionHistory.slice(0, 3))}
+      Genera DOS opciones de progresión DIRECTAS:
+      1. Aumento de peso (entre 1% y 5%).
+      2. Aumento de repeticiones (normalmente +1 o +2).
 
-      Reglas según modo:
-      - Fuerza: Descansos largos, subidas de peso pequeñas pero constantes (2.5kg o 1-2%).
-      - Hipertrofia: Rango de 8-12 reps. Si hace todas las reps, subir peso.
-      - Calistenia: Foco en repeticiones y control.
-      - Mio-reps: Foco en fatiga acumulada.
-
-      Basado en esto, ¿debería subir el peso, las repeticiones o mantenerse?
-      Genera una recomendación específica y motivadora en español.
+      REGLA ORO: La razón debe tener MÁXIMO 5 palabras. Sé seco y directo.
 
       Responde ÚNICAMENTE en JSON:
       {
-        "suggestion": {
-          "weight": número,
-          "reps": número,
-          "reason": "explicación breve y motivadora"
-        }
+        "options": {
+          "weight": { "value": número, "label": "+Xkg" },
+          "reps": { "value": número, "label": "+X reps" }
+        },
+        "reason": "texto corto"
       }
     `;
 
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [{ role: 'user', content: prompt }],
-      temperature: 0.7,
-      max_tokens: 200,
+      temperature: 0.3,
+      max_tokens: 150,
     });
 
     const content = response.choices[0]?.message?.content?.trim() || '{}';
@@ -71,6 +60,6 @@ export async function POST(req: Request) {
 
   } catch (error) {
     console.error('Training Suggestion Error:', error);
-    return NextResponse.json({ error: 'Failed to generate suggestion' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed' }, { status: 500 });
   }
 }
