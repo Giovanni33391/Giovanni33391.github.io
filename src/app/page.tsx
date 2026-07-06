@@ -29,6 +29,7 @@ export default function Home() {
     addChallenge, 
     completeChallenge, 
     deleteChallenge, 
+    refreshChallengeTask,
     isToday 
   } = useOnePercent();
   
