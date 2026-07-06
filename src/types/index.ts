@@ -41,3 +41,20 @@ export interface Routine {
   streak: number;
   createdAt: string;
 }
+
+export interface FinanceTransaction {
+  id: string;
+  amount: number;
+  type: 'income' | 'expense';
+  category: string;
+  description: string;
+  date: string; // ISO
+}
+
+export interface CleaningTask {
+  id: string;
+  name: string;
+  frequencyDays: number;
+  lastCleanedDate: string; // ISO
+  createdAt: string;
+}

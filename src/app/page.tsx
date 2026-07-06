@@ -12,6 +12,8 @@ import { ChallengeCard } from '@/components/challenges/ChallengeCard';
 import { NewChallengeForm } from '@/components/challenges/NewChallengeForm';
 import { StatsDashboard } from '@/components/dashboard/StatsDashboard';
 import { TrainingSection } from '@/components/training/TrainingSection';
+import { FinanceSection } from '@/components/finance/FinanceSection';
+import { CleaningSection } from '@/components/cleaning/CleaningSection';
 import { ProModal } from '@/components/ui/ProModal';
 import { LandingPage } from '@/components/landing/LandingPage';
 import { AuthModal } from '@/components/auth/AuthModal';
@@ -34,7 +36,7 @@ export default function Home() {
   const [isProModalOpen, setIsProModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isGuestMode, setIsGuestMode] = useState(false);
-  const [activeTab, setActiveTab] = useState<'habits' | 'training' | 'stats'>('habits');
+  const [activeTab, setActiveTab] = useState<'habits' | 'training' | 'finance' | 'cleaning' | 'stats'>('habits');
   
   const MAX_FREE_CHALLENGES = 3;
 
@@ -147,22 +149,22 @@ export default function Home() {
       </motion.header>
 
       {/* Tab Switcher - PERSISTENT */}
-      <div className="flex p-1 bg-zinc-900 border border-zinc-800 rounded-2xl mb-8 w-full max-w-2xl mx-auto sm:mx-0">
+      <div className="flex p-1 bg-zinc-900 border border-zinc-800 rounded-2xl mb-8 w-full max-w-4xl mx-auto sm:mx-0 overflow-x-auto no-scrollbar">
         <button
           onClick={() => setActiveTab('habits')}
           className={cn(
-            "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all",
+            "flex-none sm:flex-1 flex items-center justify-center gap-2 py-2.5 px-6 rounded-xl text-sm font-bold transition-all whitespace-nowrap",
             activeTab === 'habits'
               ? "bg-emerald-500 text-white shadow-lg"
               : "text-zinc-400 hover:text-zinc-200"
           )}
         >
-          Mis Hábitos
+          Hábitos
         </button>
         <button
           onClick={() => setActiveTab('training')}
           className={cn(
-            "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all",
+            "flex-none sm:flex-1 flex items-center justify-center gap-2 py-2.5 px-6 rounded-xl text-sm font-bold transition-all whitespace-nowrap",
             activeTab === 'training'
               ? "bg-emerald-500 text-white shadow-lg"
               : "text-zinc-400 hover:text-zinc-200"
@@ -171,9 +173,31 @@ export default function Home() {
           Entrenamiento
         </button>
         <button
+          onClick={() => setActiveTab('finance')}
+          className={cn(
+            "flex-none sm:flex-1 flex items-center justify-center gap-2 py-2.5 px-6 rounded-xl text-sm font-bold transition-all whitespace-nowrap",
+            activeTab === 'finance'
+              ? "bg-emerald-500 text-white shadow-lg"
+              : "text-zinc-400 hover:text-zinc-200"
+          )}
+        >
+          Finanzas
+        </button>
+        <button
+          onClick={() => setActiveTab('cleaning')}
+          className={cn(
+            "flex-none sm:flex-1 flex items-center justify-center gap-2 py-2.5 px-6 rounded-xl text-sm font-bold transition-all whitespace-nowrap",
+            activeTab === 'cleaning'
+              ? "bg-emerald-500 text-white shadow-lg"
+              : "text-zinc-400 hover:text-zinc-200"
+          )}
+        >
+          Limpieza
+        </button>
+        <button
           onClick={() => setActiveTab('stats')}
           className={cn(
-            "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all",
+            "flex-none sm:flex-1 flex items-center justify-center gap-2 py-2.5 px-6 rounded-xl text-sm font-bold transition-all whitespace-nowrap",
             activeTab === 'stats'
               ? "bg-emerald-500 text-white shadow-lg"
               : "text-zinc-400 hover:text-zinc-200"
@@ -193,6 +217,24 @@ export default function Home() {
             className="space-y-8"
           >
             <TrainingSection />
+          </motion.div>
+        ) : activeTab === 'finance' ? (
+          <motion.div
+            key="finance-tab"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-8"
+          >
+            <FinanceSection />
+          </motion.div>
+        ) : activeTab === 'cleaning' ? (
+          <motion.div
+            key="cleaning-tab"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-8"
+          >
+            <CleaningSection />
           </motion.div>
         ) : activeTab === 'stats' ? (
           <motion.div
