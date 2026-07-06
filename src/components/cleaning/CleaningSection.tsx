@@ -14,9 +14,14 @@ export const CleaningSection = () => {
   const [taskName, setTaskName] = useState('');
   const [frequency, setFrequency] = useState('1');
 
-  const getTaskStatus = (task: { lastCleanedDate: string; frequencyDays: number }) => {
-    const lastCleaned = new Date(task.lastCleanedDate);
+  const getTaskStatus = (task: { lastCleanedDate: string | null; frequencyDays: number }) => {
     const now = new Date();
+
+    if (!task.lastCleanedDate) {
+      return { progress: 0, isOverdue: true, nextCleaning: null };
+    }
+
+    const lastCleaned = new Date(task.lastCleanedDate);
 
     // Calculate next cleaning date
     const nextCleaning = new Date(lastCleaned);
@@ -140,7 +145,10 @@ export const CleaningSection = () => {
                   />
                 </div>
                 <p className="text-[10px] text-zinc-500 text-right italic">
-                  Próxima limpieza: {nextCleaning.toLocaleDateString()}
+                  {nextCleaning
+                    ? `Próxima limpieza: ${nextCleaning.toLocaleDateString()}`
+                    : 'Pendiente de primera limpieza'
+                  }
                 </p>
               </div>
 

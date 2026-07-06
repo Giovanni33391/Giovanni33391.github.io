@@ -55,6 +55,6 @@ export interface CleaningTask {
   id: string;
   name: string;
   frequencyDays: number;
-  lastCleanedDate: string; // ISO
+  lastCleanedDate: string | null; // ISO
   createdAt: string;
 }

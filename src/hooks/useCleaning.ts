@@ -19,7 +19,7 @@ export function useCleaning() {
       id: crypto.randomUUID(),
       name,
       frequencyDays,
-      lastCleanedDate: new Date().toISOString(),
+      lastCleanedDate: null,
       createdAt: new Date().toISOString()
     };
     setTasks(prev => [...prev, newTask]);
