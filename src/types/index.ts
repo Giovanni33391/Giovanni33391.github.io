@@ -24,12 +24,22 @@ export interface DailyProgress {
   metric: number;
 }
 
+export interface ExerciseSet {
+  id: string;
+  reps: number;
+  weight: number;
+  completed: boolean;
+}
+
 export interface Exercise {
   id: string;
   name: string;
-  currentMetric: number;
+  currentMetric: number; // usually target weight
   initialMetric: number;
   unit: string;
+  targetSets: number;
+  targetReps: number;
+  sets: ExerciseSet[];
   notes?: string;
 }
 
