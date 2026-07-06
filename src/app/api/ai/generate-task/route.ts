@@ -5,9 +5,13 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
+    const apiKey = process.env.OPENAI_API_KEY;
+
+    if (!apiKey) {
+      console.warn('OPENAI_API_KEY is not set. Using fallback logic.');
+    }
+
+    const openai = apiKey ? new OpenAI({ apiKey }) : null;
 
     // Allow guest users to use AI generation for testing/trial
     const {
@@ -65,17 +69,20 @@ export async function POST(req: Request) {
       }
     `;
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: 'Eres un experto en formación de hábitos y productividad minimalista.' },
-        { role: 'user', content: prompt }
-      ],
-      temperature: 0.8,
-      max_tokens: 150,
-    });
+    let content = '{}';
 
-    let content = response.choices[0]?.message?.content?.trim() || '{}';
+    if (openai) {
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: 'Eres un experto en formación de hábitos y productividad minimalista.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.8,
+        max_tokens: 150,
+      });
+      content = response.choices[0]?.message?.content?.trim() || '{}';
+    }
 
     // Robust JSON extraction
     const jsonMatch = content.match(/\{[\s\S]*\}/);
@@ -85,20 +92,42 @@ export async function POST(req: Request) {
 
     try {
       const data = JSON.parse(content);
+
+      // If we have an empty object (from fallback or failed AI), provide meaningful defaults
+      if (!data.nextTask) {
+        const nextMetric = currentMetric ? (currentMetric * 1.01) : 0;
+        const formattedMetric = Number.isInteger(nextMetric) ? nextMetric : nextMetric.toFixed(1);
+
+        data.nextTask = isQuantitative
+          ? `Tu meta para mañana es alcanzar ${formattedMetric} ${unit}.`
+          : `Mañana enfócate en mejorar un micro-detalle de "${challengeName}".`;
+
+        // Mathematical fallback for estimatedDays
+        if (isQuantitative && targetMetric && currentMetric && targetMetric > currentMetric) {
+          const days = Math.log(targetMetric / currentMetric) / Math.log(1.01);
+          const roundedDays = Math.ceil(days);
+          data.estimatedDays = roundedDays > 365 ? "un año o más" : roundedDays.toString();
+        }
+      }
+
       return NextResponse.json({
         nextTask: data.nextTask,
         estimatedDays: data.estimatedDays
       });
     } catch {
       console.error('Failed to parse AI JSON:', content);
-      // Fallback for malformed JSON but containing text
+      // Final emergency fallback
       return NextResponse.json({
-        nextTask: content.length < 100 ? content : 'Sigue progresando un 1% cada día.',
+        nextTask: 'Sigue progresando un 1% cada día para alcanzar tu meta.',
         estimatedDays: null
       });
     }
   } catch (error: unknown) {
-    console.error('AI Generation Error:', error);
-    return NextResponse.json({ error: 'Error al generar la tarea con IA' }, { status: 500 });
+    console.error('AI API Error:', error);
+    // Return a 200 OK even on error, with fallback data, to keep the UI "instant"
+    return NextResponse.json({
+      nextTask: 'Sigue mejorando un 1% cada día. La constancia es la clave.',
+      estimatedDays: null
+    });
   }
 }

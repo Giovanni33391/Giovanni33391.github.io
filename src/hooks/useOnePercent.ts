@@ -345,6 +345,11 @@ export function useOnePercent() {
     targetMetric?: number,
     targetGoal?: string
   ) => {
+    // Generate an instant initial task
+    const initialTask = type === 'qualitative'
+      ? getBetterFallback(name, 0)
+      : `Realiza ${initialMetric} ${unit} con técnica perfecta hoy.`;
+
     const newChallenge: Challenge = {
       id: crypto.randomUUID(),
       name,
@@ -356,7 +361,7 @@ export function useOnePercent() {
       estimatedDays: undefined,
       unit,
       streak: 0,
-      nextTask: undefined,
+      nextTask: initialTask,
       initialContext,
       frequency,
       startDate: new Date().toISOString(),
@@ -379,6 +384,7 @@ export function useOnePercent() {
         unit: newChallenge.unit,
         streak: newChallenge.streak,
         last_completed_date: newChallenge.lastCompletedDate,
+        next_task: newChallenge.nextTask,
         initial_context: newChallenge.initialContext,
         target_metric: newChallenge.targetMetric,
         target_goal: newChallenge.targetGoal,
@@ -474,6 +480,11 @@ export function useOnePercent() {
     const nextMetric = calculateCompoundedMetric(challengeToUpdate.initialMetric, newStreak);
     const now = new Date().toISOString();
 
+    // Generate an instant next task for quantitative habits
+    const instantNextTask = challengeToUpdate.type === 'quantitative'
+      ? `Mañana incrementa a ${nextMetric} ${challengeToUpdate.unit} (objetivo +1%).`
+      : undefined;
+
     // Optimistic progress update
     setChallenges(prev => 
       prev.map(challenge => {
@@ -483,7 +494,7 @@ export function useOnePercent() {
           streak: newStreak,
           currentMetric: nextMetric,
           lastCompletedDate: now,
-          // We keep the old nextTask until the new one is generated
+          nextTask: instantNextTask || challenge.nextTask,
         };
       })
     );
@@ -504,6 +515,7 @@ export function useOnePercent() {
           streak: newStreak,
           current_metric: nextMetric,
           last_completed_date: now,
+          next_task: instantNextTask || challengeToUpdate.nextTask,
         })
         .eq('id', id);
         

@@ -156,7 +156,7 @@ export function ChallengeCard({ challenge, onComplete, onDelete, onRefresh, isTo
             {daysToTarget && (
               <div className="mt-3 flex items-center gap-1.5 text-[10px] font-bold text-purple-400 uppercase tracking-wider bg-purple-500/10 w-fit px-2 py-1 rounded-md border border-purple-500/20">
                 <Clock className="w-3 h-3" />
-                Faltan aprox. {daysToTarget} {daysToTarget === 1 || daysToTarget === '1' ? 'día' : (!isNaN(Number(daysToTarget)) ? 'días' : '')}
+                Meta: {challenge.targetGoal} — Faltan aprox. {daysToTarget} {daysToTarget === 1 || daysToTarget === '1' ? 'día' : (!isNaN(Number(daysToTarget)) || daysToTarget === 'un año o más' ? 'días' : '')}
               </div>
             )}
           </div>
@@ -174,7 +174,7 @@ export function ChallengeCard({ challenge, onComplete, onDelete, onRefresh, isTo
                 {daysToTarget && (
                   <div className="mt-1.5 flex items-center gap-1.5 text-[10px] font-bold text-emerald-500 uppercase tracking-wider bg-emerald-500/10 w-fit px-2 py-0.5 rounded-md border border-emerald-500/20">
                     <Clock className="w-3 h-3" />
-                    Meta: {challenge.targetMetric} — Faltan {daysToTarget} {daysToTarget === 1 || daysToTarget === '1' ? 'día' : (!isNaN(Number(daysToTarget)) ? 'días' : '')}
+                    Meta: {challenge.targetMetric} — Faltan {daysToTarget} {daysToTarget === 1 || daysToTarget === '1' ? 'día' : (!isNaN(Number(daysToTarget)) || daysToTarget === 'un año o más' ? 'días' : '')}
                   </div>
                 )}
               </div>
