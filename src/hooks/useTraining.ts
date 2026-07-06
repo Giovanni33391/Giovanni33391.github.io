@@ -83,14 +83,13 @@ export function useTraining() {
     syncWithCloud().catch(console.error);
   }, [user, supabase]);
 
-  const addRoutine = useCallback(async (name: string, exercises: Omit<Exercise, 'id' | 'sets' | 'mode'>[], mode: TrainingMode = 'hypertrophy') => {
+  const addRoutine = useCallback(async (name: string, exercises: Omit<Exercise, 'id' | 'sets'>[]) => {
     const newRoutine: Routine = {
       id: crypto.randomUUID(),
       name,
       exercises: exercises.map(ex => ({
         ...ex,
         id: crypto.randomUUID(),
-        mode,
         sets: Array.from({ length: ex.targetSets }).map(() => ({
           id: crypto.randomUUID(),
           reps: ex.targetReps,
