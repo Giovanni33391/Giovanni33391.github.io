@@ -34,6 +34,7 @@ export default function Home() {
   const [isProModalOpen, setIsProModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isGuestMode, setIsGuestMode] = useState(false);
+  const [activeTab, setActiveTab] = useState<'habits' | 'stats'>('habits');
   
   const MAX_FREE_CHALLENGES = 3;
 
@@ -145,12 +146,47 @@ export default function Home() {
         </div>
       </motion.header>
 
-      {/* Stats Section */}
-      {stats && (
-        <StatsDashboard stats={stats} />
+      {/* Tab Switcher */}
+      {challenges.length > 0 && (
+        <div className="flex p-1 bg-zinc-900 border border-zinc-800 rounded-2xl mb-8 w-full max-w-sm mx-auto sm:mx-0">
+          <button
+            onClick={() => setActiveTab('habits')}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all",
+              activeTab === 'habits'
+                ? "bg-emerald-500 text-white shadow-lg"
+                : "text-zinc-400 hover:text-zinc-200"
+            )}
+          >
+            Mis Hábitos
+          </button>
+          <button
+            onClick={() => setActiveTab('stats')}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all",
+              activeTab === 'stats'
+                ? "bg-emerald-500 text-white shadow-lg"
+                : "text-zinc-400 hover:text-zinc-200"
+            )}
+          >
+            Estadísticas
+          </button>
+        </div>
       )}
 
-      {/* Day Selector Tabs */}
+      {/* Main Content */}
+      {activeTab === 'stats' ? (
+        stats && (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+          >
+            <StatsDashboard stats={stats} />
+          </motion.div>
+        )
+      ) : (
+        <>
+          {/* Day Selector Tabs */}
       {challenges.length > 0 && (
         <div className="flex overflow-x-auto pb-4 mb-8 gap-2 no-scrollbar">
           {DAYS.map((day) => (
@@ -173,8 +209,8 @@ export default function Home() {
         </div>
       )}
 
-      {/* Main Content */}
-      {challenges.length === 0 ? (
+      {/* Main Content (Habits) */}
+      {activeTab === 'habits' && (challenges.length === 0 ? (
         <EmptyState onCreateClick={handleOpenNewChallenge} />
       ) : filteredChallenges.length === 0 ? (
         <motion.div
@@ -211,10 +247,10 @@ export default function Home() {
             </motion.div>
           ))}
         </motion.div>
-      )}
+      ))}
 
       {/* Mobile FAB */}
-      {challenges.length > 0 && (
+      {activeTab === 'habits' && challenges.length > 0 && (
         <motion.div 
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
@@ -229,6 +265,8 @@ export default function Home() {
           </Button>
         </motion.div>
       )}
+    </>
+    )}
 
       {/* Modal for New Challenge */}
       <Modal
