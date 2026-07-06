@@ -91,7 +91,13 @@ export async function POST(req: Request) {
     }
 
     try {
-      const data = JSON.parse(content);
+      let data: any = {};
+
+      try {
+        data = JSON.parse(content);
+      } catch {
+        console.warn('Failed to parse AI JSON, using fallback data derivation.');
+      }
 
       // If we have an empty object (from fallback or failed AI), provide meaningful defaults
       if (!data.nextTask) {
@@ -101,8 +107,10 @@ export async function POST(req: Request) {
         data.nextTask = isQuantitative
           ? `Tu meta para mañana es alcanzar ${formattedMetric} ${unit}.`
           : `Mañana enfócate en mejorar un micro-detalle de "${challengeName}".`;
+      }
 
-        // Mathematical fallback for estimatedDays
+      // Mathematical fallback for estimatedDays
+      if (!data.estimatedDays) {
         if (isQuantitative && targetMetric && currentMetric && targetMetric > currentMetric) {
           const days = Math.log(targetMetric / currentMetric) / Math.log(1.01);
           const roundedDays = Math.ceil(days);
@@ -112,7 +120,7 @@ export async function POST(req: Request) {
 
       return NextResponse.json({
         nextTask: data.nextTask,
-        estimatedDays: data.estimatedDays
+        estimatedDays: data.estimatedDays || null
       });
     } catch {
       console.error('Failed to parse AI JSON:', content);

@@ -422,19 +422,20 @@ export function useOnePercent() {
 
       // If we still have no task but it's quantitative, provide a generic fallback
       if (!nextTask && type === 'quantitative') {
-        nextTask = `Mejora un 1% tu técnica en ${name} hoy.`;
+        nextTask = initialTask;
       }
 
       if (nextTask || estimatedDays) {
         setChallenges(prev => prev.map(c =>
-          c.id === newChallenge.id ? { ...c, nextTask, estimatedDays } : c
+          c.id === newChallenge.id ? { ...c, nextTask: nextTask || c.nextTask, estimatedDays } : c
         ));
 
         if (user) {
-          await supabase.from('challenges').update({
-            next_task: nextTask,
-            estimated_days: estimatedDays?.toString()
-          }).eq('id', newChallenge.id);
+          const updatePayload: any = {};
+          if (nextTask) updatePayload.next_task = nextTask;
+          if (estimatedDays !== undefined) updatePayload.estimated_days = estimatedDays?.toString();
+
+          await supabase.from('challenges').update(updatePayload).eq('id', newChallenge.id);
         }
       }
     };
@@ -480,10 +481,10 @@ export function useOnePercent() {
     const nextMetric = calculateCompoundedMetric(challengeToUpdate.initialMetric, newStreak);
     const now = new Date().toISOString();
 
-    // Generate an instant next task for quantitative habits
+    // Generate an instant next task
     const instantNextTask = challengeToUpdate.type === 'quantitative'
-      ? `Mañana incrementa a ${nextMetric} ${challengeToUpdate.unit} (objetivo +1%).`
-      : undefined;
+      ? `Mañana incrementa a ${formatMetric(nextMetric)} ${challengeToUpdate.unit} (objetivo +1%).`
+      : getBetterFallback(challengeToUpdate.name, newStreak);
 
     // Optimistic progress update
     setChallenges(prev => 
@@ -494,7 +495,7 @@ export function useOnePercent() {
           streak: newStreak,
           currentMetric: nextMetric,
           lastCompletedDate: now,
-          nextTask: instantNextTask || challenge.nextTask,
+          nextTask: instantNextTask,
         };
       })
     );
@@ -515,7 +516,7 @@ export function useOnePercent() {
           streak: newStreak,
           current_metric: nextMetric,
           last_completed_date: now,
-          next_task: instantNextTask || challengeToUpdate.nextTask,
+          next_task: instantNextTask,
         })
         .eq('id', id);
         
@@ -558,7 +559,7 @@ export function useOnePercent() {
           }
 
           if (!nextTask && challengeToUpdate.type === 'quantitative') {
-            nextTask = `Sigue así! Has mejorado un 1% más en ${challengeToUpdate.name}.`;
+            nextTask = instantNextTask;
           }
 
           if (nextTask || estimatedDays) {
@@ -568,18 +569,19 @@ export function useOnePercent() {
                 return {
                   ...challenge,
                   nextTask: nextTask || challenge.nextTask,
-                  estimatedDays: estimatedDays || challenge.estimatedDays
+                  estimatedDays: estimatedDays !== undefined ? estimatedDays : challenge.estimatedDays
                 };
               })
             );
 
             if (user) {
+              const updatePayload: any = {};
+              if (nextTask) updatePayload.next_task = nextTask;
+              if (estimatedDays !== undefined) updatePayload.estimated_days = estimatedDays?.toString();
+
               await supabase
                 .from('challenges')
-                .update({
-                  next_task: nextTask,
-                  estimated_days: estimatedDays?.toString()
-                })
+                .update(updatePayload)
                 .eq('id', id);
             }
           }

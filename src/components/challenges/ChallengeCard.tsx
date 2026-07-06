@@ -149,9 +149,12 @@ export function ChallengeCard({ challenge, onComplete, onDelete, onRefresh, isTo
             <div className="absolute top-0 right-0 p-2 opacity-20">
               <Sparkles className="w-8 h-8 text-purple-400" />
             </div>
-            <p className="text-[10px] uppercase font-bold text-purple-400 tracking-widest mb-2">Próximo paso IA (1%)</p>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[10px] uppercase font-bold text-purple-400 tracking-widest">Próximo paso IA (1%)</p>
+              {isRefreshing && <div className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />}
+            </div>
             <p className="text-zinc-100 font-medium leading-relaxed">
-              {challenge.nextTask || 'Generando tu próximo desafío...'}
+              {challenge.nextTask || 'Preparando tu mejora del 1%...'}
             </p>
             {daysToTarget && (
               <div className="mt-3 flex items-center gap-1.5 text-[10px] font-bold text-purple-400 uppercase tracking-wider bg-purple-500/10 w-fit px-2 py-1 rounded-md border border-purple-500/20">
@@ -182,7 +185,10 @@ export function ChallengeCard({ challenge, onComplete, onDelete, onRefresh, isTo
 
             {challenge.nextTask && (
               <div className="p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
-                <p className="text-[10px] uppercase font-bold text-emerald-500/60 tracking-widest mb-1">Tip de la IA</p>
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-[10px] uppercase font-bold text-emerald-500/60 tracking-widest">Tip de la IA</p>
+                  {isRefreshing && <div className="w-1 h-1 rounded-full bg-emerald-500/40 animate-pulse" />}
+                </div>
                 <p className="text-xs text-zinc-300 leading-relaxed italic">
                   &quot;{challenge.nextTask}&quot;
                 </p>
