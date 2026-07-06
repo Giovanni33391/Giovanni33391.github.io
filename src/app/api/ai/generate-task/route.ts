@@ -5,27 +5,64 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
+    const apiKey = process.env.OPENAI_API_KEY;
+
+    if (!apiKey) {
+      console.warn('OPENAI_API_KEY is not set. Using fallback logic.');
+    }
+
+    const openai = apiKey ? new OpenAI({ apiKey }) : null;
 
     // Allow guest users to use AI generation for testing/trial
-    const { challengeName, streak, unit, lastTask, initialContext, targetGoal } = await req.json();
+    const {
+      challengeName,
+      streak,
+      unit,
+      lastTask,
+      initialContext,
+      targetGoal,
+      targetMetric,
+      currentMetric,
+      type
+    } = await req.json();
+
+    const isQuantitative = type === 'quantitative';
+
+    // Randomize the "focus lens" to ensure variety in AI suggestions
+    const focusLenses = [
+      'identidad (ser la persona que ya lo hace)',
+      'obstáculos (eliminar lo que te frena)',
+      'preparación (preparar el entorno)',
+      'sentidos (mejorar la experiencia sensorial)',
+      'celebración (recompensa inmediata)',
+      'social (comunidad)',
+      'mentalidad (cómo piensas al respecto)'
+    ];
+    const focusLens = focusLenses[Math.floor(Math.random() * focusLenses.length)];
 
     const prompt = `
       Basado en el concepto de "Hábitos Atómicos" de James Clear, donde buscamos mejorar un 1% cada día.
+      Usa el lente de: ${focusLens}.
 
       El usuario tiene un hábito llamado: "${challengeName}".
+      Tipo de hábito: ${isQuantitative ? 'Cuantitativo (basado en números)' : 'Cualitativo (basado en habilidad/calidad)'}.
       Actualmente tiene una racha de ${streak} días.
-      La unidad de medida es: "${unit}".
-      ${initialContext ? `El punto de partida o base actual del usuario es: "${initialContext}".` : ''}
-      ${targetGoal ? `La meta final del usuario es: "${targetGoal}".` : ''}
-      ${lastTask ? `La tarea anterior fue: "${lastTask}".` : ''}
+      ${isQuantitative ? `Valor actual: ${currentMetric} ${unit}.` : `Contexto actual: "${initialContext || 'Empezando desde cero'}".`}
+      ${isQuantitative ? (targetMetric ? `Meta final: ${targetMetric} ${unit}.` : '') : (targetGoal ? `Meta final: "${targetGoal}".` : '')}
+      ${lastTask ? `La última tarea sugerida fue: "${lastTask}".` : ''}
 
-      Por favor, genera la SIGUIENTE tarea específica para mañana que represente un incremento del 1% respecto al progreso actual.
-      Es MUY IMPORTANTE que la tarea NO sea repetitiva. Debe ser creativa, variada y ofrecer un nuevo ángulo o desafío pequeño relacionado con el hábito para mantener el interés.
+      TU TAREA:
+      1. Genera la SIGUIENTE tarea específica para mañana que represente un incremento del 1% respecto al progreso actual.
+         - Si es cuantitativo, la tarea debe sugerir realizar un pequeño incremento o mejora técnica.
+         - Si es cualitativo, debe ser un paso accionable y pequeño.
+         - Es MUY IMPORTANTE que la tarea NO sea repetitiva. Debe ser creativa y variada.
 
-      Además, si se proporciona una meta final, estima cuántos días de consistencia (mejora diaria del 1%) faltan para alcanzarla razonablemente. Si el tiempo estimado es superior a 365 días, simplemente indica "un año o más".
+      2. Estima cuántos días de consistencia (mejorando un 1% diario) faltan para alcanzar la meta final.
+         - Si es cuantitativo, usa la fórmula de crecimiento compuesto: Meta = Actual * (1.01)^n.
+         - Si es cualitativo, haz una estimación profesional y realista basada en la complejidad de la meta y el punto de partida.
+         - REGLA CRÍTICA: Si el tiempo estimado es superior a 365 días, responde EXACTAMENTE con la cadena de texto "un año o más". No añadas nada más a este valor.
+         - Si el tiempo es menor a un año, devuelve el número de días como un entero o cadena numérica.
+         - Si no hay meta definida, devuelve null para estimatedDays.
 
       La tarea debe ser:
       1. Concreta y accionable.
@@ -46,25 +83,73 @@ export async function POST(req: Request) {
       }
     `;
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: 'Eres un experto en formación de hábitos y productividad minimalista.' },
-        { role: 'user', content: prompt }
-      ],
-      temperature: 0.8,
-      max_tokens: 150,
-    });
+    let content = '{}';
 
-    const content = response.choices[0]?.message?.content?.trim() || '{}';
-    const data = JSON.parse(content);
+    if (openai) {
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: 'Eres un experto en formación de hábitos y productividad minimalista.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.8,
+        max_tokens: 150,
+      });
+      content = response.choices[0]?.message?.content?.trim() || '{}';
+    }
 
-    return NextResponse.json({
-      nextTask: data.nextTask,
-      estimatedDays: data.estimatedDays
-    });
+    // Robust JSON extraction
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      content = jsonMatch[0];
+    }
+
+    try {
+      let data: { nextTask?: string; estimatedDays?: string | number | null } = {};
+
+      try {
+        data = JSON.parse(content);
+      } catch {
+        console.warn('Failed to parse AI JSON, using fallback data derivation.');
+      }
+
+      // If we have an empty object (from fallback or failed AI), provide meaningful defaults
+      if (!data.nextTask) {
+        const nextMetric = currentMetric ? (currentMetric * 1.01) : 0;
+        const formattedMetric = Number.isInteger(nextMetric) ? nextMetric : nextMetric.toFixed(1);
+
+        data.nextTask = isQuantitative
+          ? `Tu meta para mañana es alcanzar ${formattedMetric} ${unit}.`
+          : `Mañana enfócate en mejorar un micro-detalle de "${challengeName}".`;
+      }
+
+      // Mathematical fallback for estimatedDays
+      if (!data.estimatedDays) {
+        if (isQuantitative && targetMetric && currentMetric && currentMetric > 0 && targetMetric > currentMetric) {
+          const days = Math.log(targetMetric / currentMetric) / Math.log(1.01);
+          const roundedDays = Math.ceil(days);
+          data.estimatedDays = roundedDays > 365 ? "un año o más" : roundedDays.toString();
+        }
+      }
+
+      return NextResponse.json({
+        nextTask: data.nextTask,
+        estimatedDays: data.estimatedDays || null
+      });
+    } catch {
+      console.error('Failed to parse AI JSON:', content);
+      // Final emergency fallback
+      return NextResponse.json({
+        nextTask: 'Sigue progresando un 1% cada día para alcanzar tu meta.',
+        estimatedDays: null
+      });
+    }
   } catch (error: unknown) {
-    console.error('AI Generation Error:', error);
-    return NextResponse.json({ error: 'Error al generar la tarea con IA' }, { status: 500 });
+    console.error('AI API Error:', error);
+    // Return a 200 OK even on error, with fallback data, to keep the UI "instant"
+    return NextResponse.json({
+      nextTask: 'Sigue mejorando un 1% cada día. La constancia es la clave.',
+      estimatedDays: null
+    });
   }
 }

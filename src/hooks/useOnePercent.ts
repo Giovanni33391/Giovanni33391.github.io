@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Challenge } from '@/types';
-import { calculateCompoundedMetric } from '@/lib/utils';
+import { calculateCompoundedMetric, formatMetric } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
 
@@ -253,13 +253,38 @@ export function useOnePercent() {
   }, [challenges, logs, isLoaded]);
 
   // AI Task Generation Helper
-  const fetchNextAITask = async (challengeName: string, streak: number, unit: string, lastTask?: string, initialContext?: string, targetGoal?: string) => {
+  const fetchNextAITask = async (
+    challengeName: string,
+    streak: number,
+    unit: string,
+    lastTask?: string,
+    initialContext?: string,
+    targetGoal?: string,
+    targetMetric?: number,
+    currentMetric?: number,
+    type: 'quantitative' | 'qualitative' = 'qualitative'
+  ) => {
     try {
       const response = await fetch('/api/ai/generate-task', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ challengeName, streak, unit, lastTask, initialContext, targetGoal }),
+        body: JSON.stringify({
+          challengeName,
+          streak,
+          unit,
+          lastTask,
+          initialContext,
+          targetGoal,
+          targetMetric,
+          currentMetric,
+          type
+        }),
       });
+
+      if (!response.ok) {
+        throw new Error(`AI API responded with status ${response.status}`);
+      }
+
       const data = await response.json();
       return { nextTask: data.nextTask, estimatedDays: data.estimatedDays };
     } catch (err) {
@@ -270,7 +295,12 @@ export function useOnePercent() {
 
   // Auth Methods
   const signInWithGoogle = async () => {
-    await supabase.auth.signInWithOAuth({ provider: 'google' });
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`
+      }
+    });
   };
 
   const signInWithEmail = async (email: string) => {
@@ -292,9 +322,21 @@ export function useOnePercent() {
       `Intenta realizar ${name} en un entorno diferente para refrescar tu mente.`,
       `Dedica 2 minutos extra hoy a reflexionar sobre tu progreso con ${name}.`,
       `Busca un micro-detalle en ${name} que puedas optimizar hoy.`,
-      `Prueba a hacer ${name} en un horario ligeramente distinto al de ayer.`
+      `Prueba a hacer ${name} en un horario ligeramente distinto al de ayer.`,
+      `Divide tu práctica de ${name} en dos sesiones más cortas hoy.`,
+      `Visualiza el éxito con ${name} durante 30 segundos antes de empezar.`,
+      `Elimina una distracción de tu entorno antes de comenzar with ${name}.`,
+      `Haz ${name} inmediatamente después de una tarea que ya sea un hábito.`,
+      `Celebra tu racha de ${streak} días con un pequeño gesto positivo.`,
+      `Escribe una frase sobre por qué ${name} es importante para ti hoy.`,
+      `Realiza ${name} con una sonrisa, aunque te cueste un poco más.`,
+      `Simplifica al máximo ${name} hoy; lo importante es no romper la racha.`,
+      `Observa cómo te sientes físicamente después de completar ${name}.`,
+      `Busca un compañero o amigo y cuéntale tu progreso con ${name}.`
     ];
-    return fallbacks[streak % fallbacks.length];
+    // Use a pseudo-random selection based on name and streak for consistency but variety
+    const index = (name.length + streak) % fallbacks.length;
+    return fallbacks[index];
   };
 
   // Actions
@@ -308,17 +350,10 @@ export function useOnePercent() {
     targetMetric?: number,
     targetGoal?: string
   ) => {
-    let nextTask = undefined;
-    let estimatedDays = undefined;
-
-    if (type === 'qualitative') {
-      const aiData = await fetchNextAITask(name, 0, unit, undefined, initialContext, targetGoal);
-      nextTask = aiData?.nextTask;
-      estimatedDays = aiData?.estimatedDays;
-      if (!nextTask) {
-        nextTask = getBetterFallback(name, 0);
-      }
-    }
+    // Generate an instant initial task
+    const initialTask = type === 'qualitative'
+      ? getBetterFallback(name, 0)
+      : `Realiza ${initialMetric} ${unit} con técnica perfecta hoy.`;
 
     const newChallenge: Challenge = {
       id: crypto.randomUUID(),
@@ -328,10 +363,10 @@ export function useOnePercent() {
       currentMetric: initialMetric,
       targetMetric,
       targetGoal,
-      estimatedDays,
+      estimatedDays: undefined,
       unit,
       streak: 0,
-      nextTask,
+      nextTask: initialTask,
       initialContext,
       frequency,
       startDate: new Date().toISOString(),
@@ -339,8 +374,10 @@ export function useOnePercent() {
       createdAt: new Date().toISOString(),
     };
     
+    // Optimistic Update
     setChallenges(prev => [...prev, newChallenge]);
 
+    // Handle initial insert to Supabase
     if (user) {
       const { data, error } = await supabase.from('challenges').insert({
         id: newChallenge.id,
@@ -366,7 +403,81 @@ export function useOnePercent() {
         setChallenges(prev => prev.map(c => c.id === newChallenge.id ? { ...c, createdAt: data.created_at } : c));
       }
     }
+
+    // Background AI generation
+    const generateAI = async () => {
+      let nextTask = undefined;
+      let estimatedDays = undefined;
+
+      try {
+        if (user && (type === 'qualitative' || (type === 'quantitative' && targetMetric))) {
+          const aiData = await fetchNextAITask(
+            name, 0, unit, undefined, initialContext, targetGoal, targetMetric, initialMetric, type
+          );
+          nextTask = aiData?.nextTask;
+          estimatedDays = aiData?.estimatedDays;
+        }
+      } catch (err) {
+        console.error('Error generating AI task:', err);
+      }
+
+      // Fallback for qualitative or if AI fails to return a task
+      if (!nextTask && type === 'qualitative') {
+        nextTask = getBetterFallback(name, 0);
+      }
+
+      // If we still have no task but it's quantitative, provide a generic fallback
+      if (!nextTask && type === 'quantitative') {
+        nextTask = initialTask;
+      }
+
+      if (nextTask || estimatedDays) {
+        setChallenges(prev => prev.map(c =>
+          c.id === newChallenge.id ? { ...c, nextTask: nextTask || c.nextTask, estimatedDays } : c
+        ));
+
+        if (user) {
+          const updatePayload: { next_task?: string; estimated_days?: string } = {};
+          if (nextTask) updatePayload.next_task = nextTask;
+          if (estimatedDays !== undefined) updatePayload.estimated_days = estimatedDays?.toString();
+
+          await supabase.from('challenges').update(updatePayload).eq('id', newChallenge.id);
+        }
+      }
+    };
+
+    generateAI();
   }, [user, supabase, addPendingSync]);
+
+  const refreshChallengeTask = useCallback(async (id: string) => {
+    if (!user) return;
+
+    const challenge = challenges.find(c => c.id === id);
+    if (!challenge) return;
+
+    const aiData = await fetchNextAITask(
+      challenge.name,
+      challenge.streak,
+      challenge.unit,
+      challenge.nextTask,
+      challenge.initialContext,
+      challenge.targetGoal,
+      challenge.targetMetric,
+      challenge.currentMetric,
+      challenge.type
+    );
+
+    if (aiData) {
+      setChallenges(prev => prev.map(c =>
+        c.id === id ? { ...c, nextTask: aiData.nextTask, estimatedDays: aiData.estimatedDays } : c
+      ));
+
+      await supabase.from('challenges').update({
+        next_task: aiData.nextTask,
+        estimated_days: aiData.estimatedDays?.toString()
+      }).eq('id', id);
+    }
+  }, [challenges, user, supabase]);
 
   const completeChallenge = useCallback(async (id: string) => {
     const challengeToUpdate = challenges.find(c => c.id === id);
@@ -376,26 +487,12 @@ export function useOnePercent() {
     const nextMetric = calculateCompoundedMetric(challengeToUpdate.initialMetric, newStreak);
     const now = new Date().toISOString();
 
-    let nextTask = challengeToUpdate.nextTask;
-    let estimatedDays = challengeToUpdate.estimatedDays;
+    // Generate an instant next task
+    const instantNextTask = challengeToUpdate.type === 'quantitative'
+      ? `Mañana incrementa a ${formatMetric(nextMetric)} ${challengeToUpdate.unit} (objetivo +1%).`
+      : getBetterFallback(challengeToUpdate.name, newStreak);
 
-    if (challengeToUpdate.type === 'qualitative') {
-      const aiData = await fetchNextAITask(
-        challengeToUpdate.name,
-        newStreak,
-        challengeToUpdate.unit,
-        challengeToUpdate.nextTask,
-        challengeToUpdate.initialContext,
-        challengeToUpdate.targetGoal
-      );
-      nextTask = aiData?.nextTask;
-      estimatedDays = aiData?.estimatedDays;
-
-      if (!nextTask) {
-        nextTask = getBetterFallback(challengeToUpdate.name, newStreak);
-      }
-    }
-
+    // Optimistic progress update
     setChallenges(prev => 
       prev.map(challenge => {
         if (challenge.id !== id) return challenge;
@@ -404,8 +501,9 @@ export function useOnePercent() {
           streak: newStreak,
           currentMetric: nextMetric,
           lastCompletedDate: now,
-          nextTask,
-          estimatedDays
+          nextTask: instantNextTask,
+          // Clear stale estimates for quantitative habits to trigger local recalculation
+          estimatedDays: challenge.type === 'quantitative' ? undefined : challenge.estimatedDays,
         };
       })
     );
@@ -420,32 +518,88 @@ export function useOnePercent() {
     setLogs(prev => [newLog, ...prev]);
 
     if (user) {
-      const updateData = {
-        id,
-        streak: newStreak,
-        currentMetric: nextMetric,
-        lastCompletedDate: now,
-        nextTask,
-        estimatedDays
-      };
-
       const { error: updateError } = await supabase
         .from('challenges')
         .update({
           streak: newStreak,
           current_metric: nextMetric,
           last_completed_date: now,
-          next_task: nextTask,
-          estimated_days: estimatedDays?.toString()
+          next_task: instantNextTask,
         })
         .eq('id', id);
         
-      if (updateError) {
-        addPendingSync({ type: 'UPDATE', data: updateData });
-      } else {
+      if (!updateError) {
         await supabase.from('challenge_logs').insert(newLog);
+      } else {
+        addPendingSync({
+          type: 'UPDATE',
+          data: {
+            id,
+            streak: newStreak,
+            currentMetric: nextMetric,
+            lastCompletedDate: now
+          }
+        });
       }
     }
+
+    // Background AI generation for the NEXT step
+    const generateNextTask = async () => {
+      try {
+        if (user && (challengeToUpdate.type === 'qualitative' || (challengeToUpdate.type === 'quantitative' && challengeToUpdate.targetMetric))) {
+          const aiData = await fetchNextAITask(
+            challengeToUpdate.name,
+            newStreak,
+            challengeToUpdate.unit,
+            challengeToUpdate.nextTask,
+            challengeToUpdate.initialContext,
+            challengeToUpdate.targetGoal,
+            challengeToUpdate.targetMetric,
+            nextMetric,
+            challengeToUpdate.type
+          );
+
+          let nextTask = aiData?.nextTask;
+          const estimatedDays = aiData?.estimatedDays;
+
+          if (!nextTask && challengeToUpdate.type === 'qualitative') {
+            nextTask = getBetterFallback(challengeToUpdate.name, newStreak);
+          }
+
+          if (!nextTask && challengeToUpdate.type === 'quantitative') {
+            nextTask = instantNextTask;
+          }
+
+          if (nextTask || estimatedDays) {
+            setChallenges(prev =>
+              prev.map(challenge => {
+                if (challenge.id !== id) return challenge;
+                return {
+                  ...challenge,
+                  nextTask: nextTask || challenge.nextTask,
+                  estimatedDays: estimatedDays !== undefined ? estimatedDays : challenge.estimatedDays
+                };
+              })
+            );
+
+            if (user) {
+              const updatePayload: { next_task?: string; estimated_days?: string } = {};
+              if (nextTask) updatePayload.next_task = nextTask;
+              if (estimatedDays !== undefined) updatePayload.estimated_days = estimatedDays?.toString();
+
+              await supabase
+                .from('challenges')
+                .update(updatePayload)
+                .eq('id', id);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error in generateNextTask:', error);
+      }
+    };
+
+    generateNextTask();
   }, [challenges, user, supabase, addPendingSync]);
 
   const deleteChallenge = useCallback(async (id: string) => {
@@ -503,6 +657,7 @@ export function useOnePercent() {
     addChallenge,
     completeChallenge,
     deleteChallenge,
+    refreshChallengeTask,
     isToday
   };
 }

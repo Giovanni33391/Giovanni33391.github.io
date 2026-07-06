@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Button } from '../ui/Button';
-import { Zap, BarChart3, Info } from 'lucide-react';
+import { Info, Clock, Sparkles, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface NewChallengeFormProps {
@@ -63,6 +63,17 @@ export function NewChallengeForm({ onSubmit, onCancel }: NewChallengeFormProps) 
     );
   };
 
+  const estimationPreview = useMemo(() => {
+    if (type === 'qualitative') return null;
+    const initial = Number(metric);
+    const target = Number(targetMetric);
+    if (!initial || !target || target <= initial) return null;
+
+    const days = Math.log(target / initial) / Math.log(1.01);
+    const roundedDays = Math.ceil(days);
+    return roundedDays > 365 ? "un año o más" : `${roundedDays} días`;
+  }, [metric, targetMetric, type]);
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Type Selector */}
@@ -77,8 +88,8 @@ export function NewChallengeForm({ onSubmit, onCancel }: NewChallengeFormProps) 
               : "bg-zinc-950 border-zinc-800 text-zinc-500 hover:border-zinc-700"
           )}
         >
-          <BarChart3 className="w-6 h-6" />
-          <span className="text-xs font-bold uppercase tracking-wider">Cuantitativo</span>
+          <TrendingUp className="w-6 h-6" />
+          <span className="text-[10px] font-bold uppercase tracking-widest">Cuantitativo</span>
         </button>
         <button
           type="button"
@@ -86,12 +97,12 @@ export function NewChallengeForm({ onSubmit, onCancel }: NewChallengeFormProps) 
           className={cn(
             "flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all",
             type === 'qualitative'
-              ? "bg-purple-500/10 border-purple-500 text-purple-400"
+              ? "bg-purple-500/10 border-purple-500 text-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.1)]"
               : "bg-zinc-950 border-zinc-800 text-zinc-500 hover:border-zinc-700"
           )}
         >
-          <Zap className="w-6 h-6" />
-          <span className="text-xs font-bold uppercase tracking-wider">IA Cualitativa</span>
+          <Sparkles className="w-6 h-6" />
+          <span className="text-[10px] font-bold uppercase tracking-widest">Cualitativo / IA</span>
         </button>
       </div>
 
@@ -181,16 +192,24 @@ export function NewChallengeForm({ onSubmit, onCancel }: NewChallengeFormProps) 
             <label htmlFor="targetMetric" className="text-sm font-medium text-zinc-400">
               Meta final (Opcional)
             </label>
-            <input
-              id="targetMetric"
-              type="number"
-              min="1"
-              step="any"
-              placeholder="Ej. 30"
-              value={targetMetric}
-              onChange={(e) => setTargetMetric(e.target.value)}
-              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
-            />
+            <div className="relative">
+              <input
+                id="targetMetric"
+                type="number"
+                min="1"
+                step="any"
+                placeholder="Ej. 30"
+                value={targetMetric}
+                onChange={(e) => setTargetMetric(e.target.value)}
+                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
+              />
+              {estimationPreview && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-bold text-emerald-400 uppercase tracking-wider animate-in fade-in zoom-in duration-300">
+                  <Clock className="w-3 h-3" />
+                  ~ {estimationPreview}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       ) : (
@@ -236,9 +255,17 @@ export function NewChallengeForm({ onSubmit, onCancel }: NewChallengeFormProps) 
             />
           </div>
 
-          <div className="flex items-start gap-3 p-4 rounded-xl bg-purple-500/5 border border-purple-500/10 text-xs text-purple-300/80 leading-relaxed">
-            <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
-            <p>La IA generará tareas un 1% más desafiantes cada día basadas en tu objetivo y punto de partida. No necesitas métricas numéricas.</p>
+          <div className="flex flex-col gap-3">
+            {targetGoal && (
+              <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-[10px] font-bold text-purple-400 uppercase tracking-wider animate-in fade-in slide-in-from-top-1 duration-300">
+                <Sparkles className="w-3 h-3" />
+                La IA estimará los días necesarios para esta meta
+              </div>
+            )}
+            <div className="flex items-start gap-3 p-4 rounded-xl bg-purple-500/5 border border-purple-500/10 text-xs text-purple-300/80 leading-relaxed">
+              <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <p>La IA generará tareas un 1% más desafiantes cada día basadas en tu objetivo y punto de partida. No necesitas métricas numéricas.</p>
+            </div>
           </div>
         </div>
       )}
