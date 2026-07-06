@@ -11,6 +11,7 @@ import { EmptyState } from '@/components/challenges/EmptyState';
 import { ChallengeCard } from '@/components/challenges/ChallengeCard';
 import { NewChallengeForm } from '@/components/challenges/NewChallengeForm';
 import { StatsDashboard } from '@/components/dashboard/StatsDashboard';
+import { TrainingSection } from '@/components/training/TrainingSection';
 import { ProModal } from '@/components/ui/ProModal';
 import { LandingPage } from '@/components/landing/LandingPage';
 import { AuthModal } from '@/components/auth/AuthModal';
@@ -33,7 +34,7 @@ export default function Home() {
   const [isProModalOpen, setIsProModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isGuestMode, setIsGuestMode] = useState(false);
-  const [activeTab, setActiveTab] = useState<'habits' | 'stats'>('habits');
+  const [activeTab, setActiveTab] = useState<'habits' | 'training' | 'stats'>('habits');
   
   const MAX_FREE_CHALLENGES = 3;
 
@@ -146,7 +147,7 @@ export default function Home() {
       </motion.header>
 
       {/* Tab Switcher - PERSISTENT */}
-      <div className="flex p-1 bg-zinc-900 border border-zinc-800 rounded-2xl mb-8 w-full max-w-sm mx-auto sm:mx-0">
+      <div className="flex p-1 bg-zinc-900 border border-zinc-800 rounded-2xl mb-8 w-full max-w-2xl mx-auto sm:mx-0">
         <button
           onClick={() => setActiveTab('habits')}
           className={cn(
@@ -157,6 +158,17 @@ export default function Home() {
           )}
         >
           Mis Hábitos
+        </button>
+        <button
+          onClick={() => setActiveTab('training')}
+          className={cn(
+            "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all",
+            activeTab === 'training'
+              ? "bg-emerald-500 text-white shadow-lg"
+              : "text-zinc-400 hover:text-zinc-200"
+          )}
+        >
+          Entrenamiento
         </button>
         <button
           onClick={() => setActiveTab('stats')}
@@ -173,7 +185,16 @@ export default function Home() {
 
       {/* Main Content Area */}
       <div className="relative">
-        {activeTab === 'stats' ? (
+        {activeTab === 'training' ? (
+          <motion.div
+            key="training-tab"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-8"
+          >
+            <TrainingSection />
+          </motion.div>
+        ) : activeTab === 'stats' ? (
           <motion.div
             key="stats-tab"
             initial={{ opacity: 0, y: 10 }}

@@ -23,3 +23,21 @@ export interface DailyProgress {
   completed: boolean;
   metric: number;
 }
+
+export interface Exercise {
+  id: string;
+  name: string;
+  currentMetric: number;
+  initialMetric: number;
+  unit: string;
+  notes?: string;
+}
+
+export interface Routine {
+  id: string;
+  name: string;
+  exercises: Exercise[];
+  lastCompletedDate: string | null;
+  streak: number;
+  createdAt: string;
+}

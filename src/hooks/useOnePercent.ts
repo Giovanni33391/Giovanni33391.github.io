@@ -345,7 +345,6 @@ export function useOnePercent() {
     };
     
     setChallenges(prev => [...prev, newChallenge]);
-    updateChallengeWithAI(newChallenge);
 
     if (user) {
       const { data, error } = await supabase.from('challenges').insert({
@@ -367,9 +366,17 @@ export function useOnePercent() {
 
       if (error) {
         addPendingSync({ type: 'INSERT', data: newChallenge });
+        updateChallengeWithAI(newChallenge);
       } else if (data) {
-        setChallenges(prev => prev.map(c => c.id === newChallenge.id ? { ...c, createdAt: data.created_at } : c));
+        const dbChallenge: Challenge = {
+          ...newChallenge,
+          createdAt: data.created_at
+        };
+        setChallenges(prev => prev.map(c => c.id === newChallenge.id ? dbChallenge : c));
+        updateChallengeWithAI(dbChallenge);
       }
+    } else {
+      updateChallengeWithAI(newChallenge);
     }
   }, [user, supabase, addPendingSync, updateChallengeWithAI]);
 
