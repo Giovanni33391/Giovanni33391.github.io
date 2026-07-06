@@ -28,8 +28,21 @@ export async function POST(req: Request) {
 
     const isQuantitative = type === 'quantitative';
 
+    // Randomize the "focus lens" to ensure variety in AI suggestions
+    const focusLenses = [
+      'identidad (ser la persona que ya lo hace)',
+      'obstáculos (eliminar lo que te frena)',
+      'preparación (preparar el entorno)',
+      'sentidos (mejorar la experiencia sensorial)',
+      'celebración (recompensa inmediata)',
+      'social (comunidad)',
+      'mentalidad (cómo piensas al respecto)'
+    ];
+    const focusLens = focusLenses[Math.floor(Math.random() * focusLenses.length)];
+
     const prompt = `
       Basado en el concepto de "Hábitos Atómicos" de James Clear, donde buscamos mejorar un 1% cada día.
+      Usa el lente de: ${focusLens}.
 
       El usuario tiene un hábito llamado: "${challengeName}".
       Tipo de hábito: ${isQuantitative ? 'Cuantitativo (basado en números)' : 'Cualitativo (basado en habilidad/calidad)'}.
@@ -46,9 +59,10 @@ export async function POST(req: Request) {
 
       2. Estima cuántos días de consistencia (mejorando un 1% diario) faltan para alcanzar la meta final.
          - Si es cuantitativo, usa la fórmula de crecimiento compuesto: Meta = Actual * (1.01)^n.
-         - Si es cualitativo, haz una estimación profesional basada en la complejidad de la meta.
-         - REGLA CRÍTICA: Si el tiempo estimado es superior a 365 días, responde EXACTAMENTE "un año o más".
-         - Si no hay meta, devuelve null para estimatedDays.
+         - Si es cualitativo, haz una estimación profesional y realista basada en la complejidad de la meta y el punto de partida.
+         - REGLA CRÍTICA: Si el tiempo estimado es superior a 365 días, responde EXACTAMENTE con la cadena de texto "un año o más". No añadas nada más a este valor.
+         - Si el tiempo es menor a un año, devuelve el número de días como un entero o cadena numérica.
+         - Si no hay meta definida, devuelve null para estimatedDays.
 
       La tarea debe ser:
       1. Concreta y accionable.

@@ -295,7 +295,12 @@ export function useOnePercent() {
 
   // Auth Methods
   const signInWithGoogle = async () => {
-    await supabase.auth.signInWithOAuth({ provider: 'google' });
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`
+      }
+    });
   };
 
   const signInWithEmail = async (email: string) => {
@@ -388,6 +393,7 @@ export function useOnePercent() {
         initial_context: newChallenge.initialContext,
         target_metric: newChallenge.targetMetric,
         target_goal: newChallenge.targetGoal,
+        estimated_days: newChallenge.estimatedDays?.toString(),
         frequency: newChallenge.frequency,
       }).select().single();
 
@@ -496,6 +502,8 @@ export function useOnePercent() {
           currentMetric: nextMetric,
           lastCompletedDate: now,
           nextTask: instantNextTask,
+          // Clear stale estimates for quantitative habits to trigger local recalculation
+          estimatedDays: challenge.type === 'quantitative' ? undefined : challenge.estimatedDays,
         };
       })
     );

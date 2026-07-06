@@ -164,9 +164,9 @@ export function ChallengeCard({ challenge, onComplete, onDelete, onRefresh, isTo
               {challenge.nextTask || 'Preparando tu mejora del 1%...'}
             </p>
             {daysToTargetLabel && (
-              <div className="mt-3 flex items-center gap-1.5 text-[10px] font-bold text-purple-400 uppercase tracking-wider bg-purple-500/10 w-fit px-2 py-1 rounded-md border border-purple-500/20">
-                <Clock className="w-3 h-3" />
-                Meta: {challenge.targetGoal} — Est. {daysToTargetLabel}
+              <div className="mt-3 flex items-center gap-1.5 text-[10px] font-bold text-purple-400 uppercase tracking-wider bg-purple-500/15 w-fit px-2.5 py-1.5 rounded-lg border border-purple-500/30 shadow-sm shadow-purple-500/10">
+                <Clock className="w-3.5 h-3.5" />
+                Meta: {challenge.targetGoal} — Faltan aprox. {daysToTargetLabel}
               </div>
             )}
           </div>
@@ -182,9 +182,9 @@ export function ChallengeCard({ challenge, onComplete, onDelete, onRefresh, isTo
                   <span className="text-zinc-500 font-medium">{challenge.unit}</span>
                 </div>
                 {daysToTargetLabel && (
-                  <div className="mt-1.5 flex items-center gap-1.5 text-[10px] font-bold text-emerald-500 uppercase tracking-wider bg-emerald-500/10 w-fit px-2 py-0.5 rounded-md border border-emerald-500/20">
-                    <Clock className="w-3 h-3" />
-                    Meta: {challenge.targetMetric} — Est. {daysToTargetLabel}
+                  <div className="mt-2 flex items-center gap-1.5 text-[10px] font-bold text-emerald-500 uppercase tracking-wider bg-emerald-500/15 w-fit px-2.5 py-1.5 rounded-lg border border-emerald-500/30 shadow-sm shadow-emerald-500/10">
+                    <Clock className="w-3.5 h-3.5" />
+                    Meta: {challenge.targetMetric} {challenge.unit} — Faltan {daysToTargetLabel}
                   </div>
                 )}
               </div>
