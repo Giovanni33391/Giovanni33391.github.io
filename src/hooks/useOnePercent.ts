@@ -45,6 +45,21 @@ export const isYesterday = (dateString: string | null) => {
 };
 
 export function useOnePercent() {
+  const getHeuristicFallback = (name: string, streak: number, unit?: string, currentMetric?: number) => {
+    if (currentMetric !== undefined && unit) {
+      const nextValue = currentMetric > 0 ? (currentMetric * 1.01).toFixed(1) : "1";
+      return `Mañana intenta alcanzar ${nextValue} ${unit}. ¡El progreso constante es la clave!`;
+    }
+    const fallbacks = [
+      `Hoy enfócate en la técnica perfecta para ${name}, más que en la cantidad.`,
+      `Intenta realizar ${name} en un entorno diferente para refrescar tu mente.`,
+      `Dedica 2 minutos extra hoy a reflexionar sobre tu progreso con ${name}.`,
+      `Busca un micro-detalle en ${name} que puedas optimizar hoy.`,
+      `Prueba a hacer ${name} en un horario ligeramente distinto al de ayer.`
+    ];
+    return fallbacks[streak % fallbacks.length];
+  };
+
   const [logs, setLogs] = useState<ChallengeLog[]>(() => {
     if (typeof window === 'undefined') return [];
     const stored = localStorage.getItem(LOGS_KEY);
@@ -73,7 +88,6 @@ export function useOnePercent() {
     }
   });
 
-  // Use a ref to keep track of challenges for UI display and internal sync logic
   const challengesRef = useRef(challenges);
   useEffect(() => {
     challengesRef.current = challenges;
@@ -190,7 +204,7 @@ export function useOnePercent() {
               estimatedDays: dbChallenge.estimated_days,
               unit: dbChallenge.unit,
               streak: dbChallenge.streak,
-              nextTask: dbChallenge.next_task,
+              nextTask: dbChallenge.next_task || getHeuristicFallback(dbChallenge.name, dbChallenge.streak, dbChallenge.unit, dbChallenge.current_metric),
               initialContext: dbChallenge.initial_context,
               frequency: dbChallenge.frequency || [0, 1, 2, 3, 4, 5, 6],
               startDate: dbChallenge.created_at,
@@ -256,11 +270,8 @@ export function useOnePercent() {
 
   const updateChallengeWithAI = useCallback(async (challenge: Challenge) => {
     const { id } = challenge;
-
     setChallenges(prev => prev.map(c => c.id === id ? { ...c, isRefreshing: true } : c));
-
     const aiData = await fetchNextAITask(challenge);
-
     if (aiData && aiData.nextTask) {
       setChallenges(prev => prev.map(c => {
         if (c.id !== id) return c;
@@ -271,7 +282,6 @@ export function useOnePercent() {
           isRefreshing: false
         };
       }));
-
       if (user) {
         await supabase.from('challenges').update({
           next_task: aiData.nextTask,
@@ -298,21 +308,6 @@ export function useOnePercent() {
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
-  };
-
-  const getHeuristicFallback = (name: string, streak: number, unit?: string, currentMetric?: number) => {
-    if (currentMetric !== undefined && unit) {
-      const nextValue = currentMetric > 0 ? (currentMetric * 1.01).toFixed(1) : "1";
-      return `Mañana intenta alcanzar ${nextValue} ${unit}. ¡El progreso constante es la clave!`;
-    }
-    const fallbacks = [
-      `Hoy enfócate en la técnica perfecta para ${name}, más que en la cantidad.`,
-      `Intenta realizar ${name} en un entorno diferente para refrescar tu mente.`,
-      `Dedica 2 minutos extra hoy a reflexionar sobre tu progreso con ${name}.`,
-      `Busca un micro-detalle en ${name} que puedas optimizar hoy.`,
-      `Prueba a hacer ${name} en un horario ligeramente distinto al de ayer.`
-    ];
-    return fallbacks[streak % fallbacks.length];
   };
 
   const addChallenge = useCallback(async (
@@ -343,9 +338,7 @@ export function useOnePercent() {
       createdAt: new Date().toISOString(),
       isRefreshing: true
     };
-    
     setChallenges(prev => [...prev, newChallenge]);
-
     if (user) {
       const { data, error } = await supabase.from('challenges').insert({
         id: newChallenge.id,
@@ -363,7 +356,6 @@ export function useOnePercent() {
         target_goal: newChallenge.targetGoal,
         frequency: newChallenge.frequency,
       }).select().single();
-
       if (error) {
         addPendingSync({ type: 'INSERT', data: newChallenge });
         updateChallengeWithAI(newChallenge);
@@ -383,12 +375,10 @@ export function useOnePercent() {
   const completeChallenge = useCallback(async (id: string) => {
     const challengeToUpdate = challengesRef.current.find(c => c.id === id);
     if (!challengeToUpdate || isToday(challengeToUpdate.lastCompletedDate)) return;
-
     const newStreak = isYesterday(challengeToUpdate.lastCompletedDate) ? challengeToUpdate.streak + 1 : 1;
     const nextMetric = calculateCompoundedMetric(challengeToUpdate.initialMetric, newStreak);
     const now = new Date().toISOString();
     const heuristicTask = getHeuristicFallback(challengeToUpdate.name, newStreak, challengeToUpdate.unit, nextMetric);
-
     const updatedChallenge: Challenge = {
       ...challengeToUpdate,
       streak: newStreak,
@@ -397,11 +387,7 @@ export function useOnePercent() {
       nextTask: heuristicTask,
       isRefreshing: true
     };
-
-    setChallenges(prev => 
-      prev.map(challenge => challenge.id === id ? updatedChallenge : challenge)
-    );
-
+    setChallenges(prev => prev.map(challenge => challenge.id === id ? updatedChallenge : challenge));
     const newLog: ChallengeLog = {
       challenge_id: id,
       user_id: user?.id,
@@ -409,9 +395,7 @@ export function useOnePercent() {
       completed_at: now
     };
     setLogs(prev => [newLog, ...prev]);
-
     updateChallengeWithAI(updatedChallenge);
-
     if (user) {
       const { error: updateError } = await supabase
         .from('challenges')
@@ -422,7 +406,6 @@ export function useOnePercent() {
           next_task: heuristicTask
         })
         .eq('id', id);
-        
       if (updateError) {
         addPendingSync({ type: 'UPDATE', data: {
           id,

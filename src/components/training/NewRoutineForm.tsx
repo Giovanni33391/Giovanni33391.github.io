@@ -1,12 +1,20 @@
 import React, { useState } from 'react';
-import { Plus, X, Dumbbell, Hash, Weight } from 'lucide-react';
+import { Plus, X, Dumbbell, Hash, Weight, Zap } from 'lucide-react';
 import { Button } from '../ui/Button';
-import { Exercise } from '@/types';
+import { Exercise, TrainingMode } from '@/types';
 
 interface NewRoutineFormProps {
   onSubmit: (name: string, exercises: Omit<Exercise, 'id' | 'sets'>[]) => void;
   onCancel: () => void;
 }
+
+const MODES: { value: TrainingMode; label: string; desc: string }[] = [
+  { value: 'hypertrophy', label: 'Hipertrofia', desc: '8-12 reps, 90s descanso' },
+  { value: 'strength', label: 'Fuerza', desc: '1-5 reps, 3-5m descanso' },
+  { value: 'calisthenics', label: 'Calistenia', desc: 'Control total, 2m descanso' },
+  { value: 'myoreps', label: 'Mio-reps', desc: 'Fatiga máxima, 30s descanso' },
+  { value: 'endurance', label: 'Resistencia', desc: '15+ reps, 60s descanso' }
+];
 
 export const NewRoutineForm = ({ onSubmit, onCancel }: NewRoutineFormProps) => {
   const [name, setName] = useState('');
@@ -17,6 +25,7 @@ export const NewRoutineForm = ({ onSubmit, onCancel }: NewRoutineFormProps) => {
   const [newExSets, setNewExSets] = useState('3');
   const [newExReps, setNewExReps] = useState('10');
   const [newExUnit, setNewExUnit] = useState('kg');
+  const [newExMode, setNewExMode] = useState<TrainingMode>('hypertrophy');
 
   const handleAddExercise = () => {
     if (!newExName || !newExMetric) return;
@@ -26,8 +35,10 @@ export const NewRoutineForm = ({ onSubmit, onCancel }: NewRoutineFormProps) => {
       currentMetric: parseFloat(newExMetric),
       targetSets: parseInt(newExSets),
       targetReps: parseInt(newExReps),
-      unit: newExUnit
-    }]);
+      unit: newExUnit,
+      mode: newExMode,
+      sets: []
+    } as Omit<Exercise, 'id' | 'sets'>]);
     setNewExName('');
     setNewExMetric('');
   };
@@ -62,9 +73,14 @@ export const NewRoutineForm = ({ onSubmit, onCancel }: NewRoutineFormProps) => {
         <div className="space-y-2">
           {exercises.map((ex, index) => (
             <div key={index} className="flex items-center justify-between p-3 bg-zinc-950 border border-zinc-800 rounded-xl">
-              <div>
-                <p className="font-bold text-zinc-100 text-sm">{ex.name}</p>
-                <p className="text-[10px] text-zinc-500 font-bold uppercase">{ex.targetSets}x{ex.targetReps} • {ex.initialMetric}{ex.unit}</p>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                   <Zap className="w-4 h-4 text-emerald-500" />
+                </div>
+                <div>
+                  <p className="font-bold text-zinc-100 text-sm">{ex.name}</p>
+                  <p className="text-[10px] text-zinc-500 font-bold uppercase">{ex.targetSets}x{ex.targetReps} • {ex.initialMetric}{ex.unit} • {ex.mode}</p>
+                </div>
               </div>
               <button type="button" onClick={() => removeExercise(index)} className="p-2 text-zinc-600 hover:text-red-400 transition-colors">
                 <X className="w-4 h-4" />
@@ -86,6 +102,27 @@ export const NewRoutineForm = ({ onSubmit, onCancel }: NewRoutineFormProps) => {
                   className="w-full bg-zinc-950 border border-zinc-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-zinc-100 focus:border-emerald-500 focus:outline-none font-medium"
                 />
               </div>
+            </div>
+
+            <div className="col-span-12">
+               <label className="text-[8px] font-black text-zinc-600 uppercase tracking-[0.2em] mb-2 block">Modo de Entrenamiento</label>
+               <div className="grid grid-cols-2 xs:grid-cols-3 gap-2">
+                  {MODES.map((m) => (
+                    <button
+                      key={m.value}
+                      type="button"
+                      onClick={() => setNewExMode(m.value)}
+                      className={`p-2 rounded-xl border text-left transition-all ${
+                        newExMode === m.value
+                        ? "bg-emerald-500/10 border-emerald-500 text-emerald-500"
+                        : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-700"
+                      }`}
+                    >
+                      <p className="text-[10px] font-black uppercase">{m.label}</p>
+                      <p className="text-[8px] opacity-60 leading-tight">{m.desc}</p>
+                    </button>
+                  ))}
+               </div>
             </div>
 
             <div className="col-span-6">

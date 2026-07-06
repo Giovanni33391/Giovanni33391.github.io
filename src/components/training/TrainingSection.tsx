@@ -20,6 +20,8 @@ export const TrainingSection = () => {
     startWorkout,
     updateSet,
     finishWorkout,
+    applySuggestion,
+    ignoreSuggestion,
     cancelWorkout
   } = useTraining();
 
@@ -113,6 +115,8 @@ export const TrainingSection = () => {
                     routine={routine}
                     onStart={startWorkout}
                     onDelete={deleteRoutine}
+                    onApplySuggestion={applySuggestion}
+                    onIgnoreSuggestion={ignoreSuggestion}
                   />
                 ))}
                 <button

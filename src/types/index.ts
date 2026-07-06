@@ -31,6 +31,8 @@ export interface ExerciseSet {
   completed: boolean;
 }
 
+export type TrainingMode = 'strength' | 'hypertrophy' | 'calisthenics' | 'myoreps' | 'endurance';
+
 export interface Exercise {
   id: string;
   name: string;
@@ -39,8 +41,14 @@ export interface Exercise {
   unit: string;
   targetSets: number;
   targetReps: number;
+  mode: TrainingMode;
   sets: ExerciseSet[];
   notes?: string;
+  suggestion?: {
+    weight?: number;
+    reps?: number;
+    reason?: string;
+  };
 }
 
 export interface WorkoutSession {
@@ -61,6 +69,7 @@ export interface Routine {
   streak: number;
   createdAt: string;
   history?: WorkoutSession[];
+  isRefreshingAI?: boolean;
 }
 
 export interface FinanceTransaction {

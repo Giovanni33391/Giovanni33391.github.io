@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Routine, Exercise, ExerciseSet, WorkoutSession } from '@/types';
+import { Routine, Exercise, ExerciseSet, WorkoutSession, TrainingMode } from '@/types';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
 
@@ -45,7 +45,6 @@ export function useTraining() {
     if (!user) return;
 
     const syncWithCloud = async () => {
-      // Sync Routines
       const { data: cloudRoutines } = await supabase.from('routines').select('*').eq('user_id', user.id);
       if (cloudRoutines) {
         setRoutines(prev => {
@@ -59,24 +58,15 @@ export function useTraining() {
               streak: cr.streak,
               createdAt: cr.created_at
             };
-
             const local = localMap.get(cr.id);
-            if (!local) {
+            if (!local || (cr.last_completed_date && new Date(cr.last_completed_date).getTime() > (local.lastCompletedDate ? new Date(local.lastCompletedDate).getTime() : 0))) {
               localMap.set(cr.id, cloudMapped);
-            } else {
-              // Simple conflict resolution: cloud with more recent completion wins
-              const cloudTime = cr.last_completed_date ? new Date(cr.last_completed_date).getTime() : 0;
-              const localTime = local.lastCompletedDate ? new Date(local.lastCompletedDate).getTime() : 0;
-              if (cloudTime > localTime) {
-                localMap.set(cr.id, cloudMapped);
-              }
             }
           });
           return Array.from(localMap.values());
         });
       }
 
-      // Sync Sessions
       const { data: cloudSessions } = await supabase.from('workout_sessions').select('*').eq('user_id', user.id).order('date', { ascending: false });
       if (cloudSessions) {
         setSessions(cloudSessions.map(cs => ({
@@ -93,13 +83,14 @@ export function useTraining() {
     syncWithCloud().catch(console.error);
   }, [user, supabase]);
 
-  const addRoutine = useCallback(async (name: string, exercises: Omit<Exercise, 'id' | 'sets'>[]) => {
+  const addRoutine = useCallback(async (name: string, exercises: Omit<Exercise, 'id' | 'sets' | 'mode'>[], mode: TrainingMode = 'hypertrophy') => {
     const newRoutine: Routine = {
       id: crypto.randomUUID(),
       name,
       exercises: exercises.map(ex => ({
         ...ex,
         id: crypto.randomUUID(),
+        mode,
         sets: Array.from({ length: ex.targetSets }).map(() => ({
           id: crypto.randomUUID(),
           reps: ex.targetReps,
@@ -113,7 +104,6 @@ export function useTraining() {
     };
 
     setRoutines(prev => [...prev, newRoutine]);
-
     if (user) {
       await supabase.from('routines').insert({
         id: newRoutine.id,
@@ -128,9 +118,7 @@ export function useTraining() {
 
   const deleteRoutine = useCallback(async (id: string) => {
     setRoutines(prev => prev.filter(r => r.id !== id));
-    if (user) {
-      await supabase.from('routines').delete().eq('id', id);
-    }
+    if (user) await supabase.from('routines').delete().eq('id', id);
   }, [user, supabase]);
 
   const startWorkout = useCallback((routine: Routine) => {
@@ -160,15 +148,38 @@ export function useTraining() {
     });
   }, []);
 
+  const fetchTrainingSuggestions = async (routine: Routine, history: WorkoutSession[]) => {
+    const updatedExercises = [...routine.exercises];
+    for (let i = 0; i < updatedExercises.length; i++) {
+      const ex = updatedExercises[i];
+      const exerciseHistory = history
+        .filter(s => s.routineId === routine.id)
+        .map(s => s.exercises.find(e => e.name === ex.name))
+        .filter(Boolean);
+
+      try {
+        const res = await fetch('/api/ai/training-suggestion', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ exercise: ex, sessionHistory: exerciseHistory, mode: ex.mode })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          updatedExercises[i] = { ...ex, suggestion: data.suggestion };
+        }
+      } catch (err) {
+        console.error('Failed to fetch suggestion for', ex.name, err);
+      }
+    }
+    return updatedExercises;
+  };
+
   const finishWorkout = useCallback(async (duration: number) => {
     if (!activeRoutine) return;
-
     const now = new Date().toISOString();
     let totalVolume = 0;
     activeRoutine.exercises.forEach(ex => {
-      ex.sets.forEach(s => {
-        if (s.completed) totalVolume += s.weight * s.reps;
-      });
+      ex.sets.forEach(s => { if (s.completed) totalVolume += s.weight * s.reps; });
     });
 
     const newSession: WorkoutSession = {
@@ -183,54 +194,87 @@ export function useTraining() {
 
     setSessions(prev => [newSession, ...prev]);
 
-    let finalRoutine: Routine | null = null;
-    const updatedRoutines = routines.map(routine => {
-      if (routine.id !== activeRoutine.id) return routine;
+    // Update routine state locally first
+    let updatedRoutine: Routine | null = null;
+    const updatedRoutines = routines.map(r => {
+      if (r.id !== activeRoutine.id) return r;
+      updatedRoutine = {
+        ...r,
+        streak: r.streak + 1,
+        lastCompletedDate: now,
+        isRefreshingAI: true
+      };
+      return updatedRoutine;
+    });
+    setRoutines(updatedRoutines);
+    setActiveRoutine(null);
 
-      const newStreak = routine.streak + 1;
-      const updatedExercises = routine.exercises.map(ex => {
+    // Fetch AI Suggestions in background
+    if (updatedRoutine) {
+      const suggestedExercises = await fetchTrainingSuggestions(updatedRoutine, [newSession, ...sessions]);
+      setRoutines(prev => prev.map(r => r.id === activeRoutine.id ? { ...r, exercises: suggestedExercises, isRefreshingAI: false } : r));
+
+      if (user) {
+        await supabase.from('routines').update({
+          streak: (updatedRoutine as Routine).streak,
+          last_completed_date: (updatedRoutine as Routine).lastCompletedDate,
+          exercises: suggestedExercises
+        }).eq('id', (updatedRoutine as Routine).id);
+
+        await supabase.from('workout_sessions').insert({
+          id: newSession.id,
+          user_id: user.id,
+          routine_id: newSession.routineId,
+          routine_name: newSession.routineName,
+          date: newSession.date,
+          duration: newSession.duration,
+          total_volume: newSession.totalVolume,
+          exercises: newSession.exercises
+        });
+      }
+    }
+  }, [activeRoutine, routines, sessions, user, supabase]);
+
+  const applySuggestion = useCallback(async (routineId: string, exerciseId: string) => {
+    setRoutines(prev => prev.map(r => {
+      if (r.id !== routineId) return r;
+      const updatedExercises = r.exercises.map(ex => {
+        if (ex.id !== exerciseId || !ex.suggestion) return ex;
         return {
           ...ex,
-          currentMetric: Number((ex.currentMetric * 1.01).toFixed(2)),
+          currentMetric: ex.suggestion.weight ?? ex.currentMetric,
+          targetReps: ex.suggestion.reps ?? ex.targetReps,
+          suggestion: undefined,
           sets: ex.sets.map(s => ({
             ...s,
-            weight: Number((s.weight * 1.01).toFixed(2)),
+            weight: ex.suggestion?.weight ?? s.weight,
+            reps: ex.suggestion?.reps ?? s.reps,
             completed: false
           }))
         };
       });
 
-      finalRoutine = {
-        ...routine,
-        streak: newStreak,
-        lastCompletedDate: now,
-        exercises: updatedExercises
-      };
-      return finalRoutine;
-    });
+      const updated = { ...r, exercises: updatedExercises };
+      if (user) {
+        supabase.from('routines').update({ exercises: updatedExercises }).eq('id', r.id).then();
+      }
+      return updated;
+    }));
+  }, [user, supabase]);
 
-    setRoutines(updatedRoutines);
-    setActiveRoutine(null);
-
-    if (user && finalRoutine) {
-      await supabase.from('routines').update({
-        streak: (finalRoutine as Routine).streak,
-        last_completed_date: (finalRoutine as Routine).lastCompletedDate,
-        exercises: (finalRoutine as Routine).exercises
-      }).eq('id', (finalRoutine as Routine).id);
-
-      await supabase.from('workout_sessions').insert({
-        id: newSession.id,
-        user_id: user.id,
-        routine_id: newSession.routineId,
-        routine_name: newSession.routineName,
-        date: newSession.date,
-        duration: newSession.duration,
-        total_volume: newSession.totalVolume,
-        exercises: newSession.exercises
-      });
-    }
-  }, [activeRoutine, routines, user, supabase]);
+  const ignoreSuggestion = useCallback(async (routineId: string, exerciseId: string) => {
+    setRoutines(prev => prev.map(r => {
+      if (r.id !== routineId) return r;
+      const updatedExercises = r.exercises.map(ex =>
+        ex.id === exerciseId ? { ...ex, suggestion: undefined } : ex
+      );
+      const updated = { ...r, exercises: updatedExercises };
+      if (user) {
+        supabase.from('routines').update({ exercises: updatedExercises }).eq('id', r.id).then();
+      }
+      return updated;
+    }));
+  }, [user, supabase]);
 
   return {
     routines,
@@ -241,6 +285,8 @@ export function useTraining() {
     startWorkout,
     updateSet,
     finishWorkout,
+    applySuggestion,
+    ignoreSuggestion,
     cancelWorkout: () => setActiveRoutine(null),
     user
   };
