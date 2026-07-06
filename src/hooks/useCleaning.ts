@@ -19,7 +19,7 @@ export function useCleaning() {
       id: crypto.randomUUID(),
       name,
       frequencyDays,
-      lastCleanedDate: null,
+      lastCleanedDate: null, // Initialize as null to show 0% progress
       createdAt: new Date().toISOString()
     };
     setTasks(prev => [...prev, newTask]);
