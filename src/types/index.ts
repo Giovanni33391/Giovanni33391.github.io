@@ -43,6 +43,16 @@ export interface Exercise {
   notes?: string;
 }
 
+export interface WorkoutSession {
+  id: string;
+  routineId: string;
+  routineName: string;
+  date: string;
+  duration: number; // seconds
+  totalVolume: number;
+  exercises: Exercise[];
+}
+
 export interface Routine {
   id: string;
   name: string;
@@ -50,6 +60,7 @@ export interface Routine {
   lastCompletedDate: string | null;
   streak: number;
   createdAt: string;
+  history?: WorkoutSession[];
 }
 
 export interface FinanceTransaction {
