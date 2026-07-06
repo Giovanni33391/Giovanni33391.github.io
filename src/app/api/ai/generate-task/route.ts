@@ -113,17 +113,25 @@ export async function POST(req: Request) {
     const content = response.choices[0]?.message?.content?.trim() || '{}';
 
     // Robust JSON extraction
-    let data = { nextTask: '', estimatedDays: null };
+    let data: { nextTask?: string; estimatedDays?: string | number | null } = {};
     try {
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        data = JSON.parse(jsonMatch[0]);
+      // Find the first { and the last } to extract JSON if there's any surrounding text
+      const firstBrace = content.indexOf('{');
+      const lastBrace = content.lastIndexOf('}');
+
+      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        const jsonStr = content.substring(firstBrace, lastBrace + 1);
+        data = JSON.parse(jsonStr);
       } else {
         data = JSON.parse(content);
       }
     } catch (parseError) {
       console.error('JSON Parse Error:', parseError, 'Content:', content);
-      throw parseError;
+      // If parsing fails, use the heuristic fallback
+      return NextResponse.json({
+        nextTask: getHeuristicFallback(challengeName, streak, unit, currentMetric),
+        estimatedDays: null
+      });
     }
 
     return NextResponse.json({

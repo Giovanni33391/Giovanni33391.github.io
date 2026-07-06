@@ -26,7 +26,6 @@ export default function Home() {
     addChallenge, 
     completeChallenge, 
     deleteChallenge, 
-    refreshChallengeTask,
     isToday 
   } = useOnePercent();
   
@@ -120,7 +119,7 @@ export default function Home() {
         </div>
 
         <div className="flex items-center gap-4">
-          {!user && challenges.length > 0 && (
+          {!user && (challenges.length > 0 || isGuestMode) && (
             <Button onClick={handleOpenNewChallenge} className="hidden sm:flex" variant="outline">
               <Plus className="w-4 h-4 mr-2" />
               Desafío
@@ -146,7 +145,7 @@ export default function Home() {
         </div>
       </motion.header>
 
-      {/* Tab Switcher */}
+      {/* Tab Switcher - PERSISTENT */}
       <div className="flex p-1 bg-zinc-900 border border-zinc-800 rounded-2xl mb-8 w-full max-w-sm mx-auto sm:mx-0">
         <button
           onClick={() => setActiveTab('habits')}
@@ -172,89 +171,87 @@ export default function Home() {
         </button>
       </div>
 
-      {/* Main Content */}
-      {activeTab === 'stats' ? (
-        stats && (
+      {/* Main Content Area */}
+      <div className="relative">
+        {activeTab === 'stats' ? (
           <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
+            key="stats-tab"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
             className="space-y-8"
           >
-            <StatsDashboard stats={stats} />
+            {stats && <StatsDashboard stats={stats} />}
             {challenges.length === 0 && (
               <div className="p-8 rounded-3xl bg-zinc-900/50 border border-zinc-800 border-dashed text-center">
                 <p className="text-zinc-500 font-medium">Añade tu primer desafío para empezar a generar estadísticas.</p>
               </div>
             )}
           </motion.div>
-        )
-      ) : (
-        <>
-          {/* Day Selector Tabs */}
-      {challenges.length > 0 && (
-        <div className="flex overflow-x-auto pb-4 mb-8 gap-2 no-scrollbar">
-          {DAYS.map((day) => (
-            <button
-              key={day.value}
-              onClick={() => setSelectedDay(day.value)}
-              className={cn(
-                "flex-shrink-0 px-6 py-3 rounded-2xl font-bold transition-all border",
-                selectedDay === day.value
-                  ? "bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-500/20"
-                  : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700"
-              )}
-            >
-              {day.label}
-              {day.value === new Date().getDay() && (
-                <span className="ml-2 w-1.5 h-1.5 rounded-full bg-current inline-block" />
-              )}
-            </button>
-          ))}
-        </div>
-      )}
+        ) : (
+          <motion.div
+            key="habits-tab"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            {/* Day Selector Tabs */}
+            {challenges.length > 0 && (
+              <div className="flex overflow-x-auto pb-4 mb-8 gap-2 no-scrollbar">
+                {DAYS.map((day) => (
+                  <button
+                    key={day.value}
+                    onClick={() => setSelectedDay(day.value)}
+                    className={cn(
+                      "flex-shrink-0 px-6 py-3 rounded-2xl font-bold transition-all border",
+                      selectedDay === day.value
+                        ? "bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-500/20"
+                        : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700"
+                    )}
+                  >
+                    {day.label}
+                    {day.value === new Date().getDay() && (
+                      <span className="ml-2 w-1.5 h-1.5 rounded-full bg-current inline-block" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
 
-      {/* Main Content (Habits) */}
-      {activeTab === 'habits' && (challenges.length === 0 ? (
-        <EmptyState onCreateClick={handleOpenNewChallenge} />
-      ) : filteredChallenges.length === 0 ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="py-20 text-center"
-        >
-          <div className="w-16 h-16 bg-zinc-900 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-zinc-800">
-            <Target className="w-8 h-8 text-zinc-700" />
-          </div>
-          <h3 className="text-zinc-100 font-bold text-lg mb-2">No hay desafíos para este día</h3>
-          <p className="text-zinc-500 max-w-xs mx-auto">Selecciona otro día o crea uno nuevo para mejorar un 1% hoy.</p>
-        </motion.div>
-      ) : (
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-        >
-          {filteredChallenges.map((challenge, index) => (
-            <motion.div
-              key={challenge.id}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <ChallengeCard 
-                challenge={challenge}
-                onComplete={handleCompleteChallenge}
-                onDelete={deleteChallenge}
-                onRefresh={refreshChallengeTask}
-                isToday={isToday}
-              />
-            </motion.div>
-          ))}
-        </motion.div>
-      ))}
+            {/* Main Content (Habits List or Empty State) */}
+            {challenges.length === 0 ? (
+              <EmptyState onCreateClick={handleOpenNewChallenge} />
+            ) : filteredChallenges.length === 0 ? (
+              <div className="py-20 text-center">
+                <div className="w-16 h-16 bg-zinc-900 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-zinc-800">
+                  <Target className="w-8 h-8 text-zinc-700" />
+                </div>
+                <h3 className="text-zinc-100 font-bold text-lg mb-2">No hay desafíos para este día</h3>
+                <p className="text-zinc-500 max-w-xs mx-auto">Selecciona otro día o crea uno nuevo para mejorar un 1% hoy.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredChallenges.map((challenge, index) => (
+                  <motion.div
+                    key={challenge.id}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: index * 0.1 }}
+                  >
+                    <ChallengeCard
+                      challenge={challenge}
+                      onComplete={handleCompleteChallenge}
+                      onDelete={deleteChallenge}
+                      isToday={isToday}
+                    />
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        )}
+      </div>
 
       {/* Mobile FAB */}
-      {activeTab === 'habits' && challenges.length > 0 && (
+      {activeTab === 'habits' && (challenges.length > 0 || isGuestMode) && (
         <motion.div 
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
@@ -269,8 +266,6 @@ export default function Home() {
           </Button>
         </motion.div>
       )}
-    </>
-    )}
 
       {/* Modal for New Challenge */}
       <Modal
@@ -289,7 +284,7 @@ export default function Home() {
         onClose={() => setIsProModalOpen(false)} 
       />
 
-      {!user && challenges.length > 0 && (
+      {!user && (challenges.length > 0 || isGuestMode) && (
         <AuthModal
           isOpen={isAuthModalOpen}
           onClose={() => setIsAuthModalOpen(false)}

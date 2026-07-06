@@ -238,8 +238,16 @@ export function useOnePercent() {
           type: challenge.type
         }),
       });
+
+      if (!response.ok) {
+        throw new Error(`AI API failed with status ${response.status}`);
+      }
+
       const data = await response.json();
-      return { nextTask: data.nextTask, estimatedDays: data.estimatedDays };
+      return {
+        nextTask: data.nextTask || null,
+        estimatedDays: data.estimatedDays || null
+      };
     } catch (err) {
       console.error('Failed to fetch AI task:', err);
       return null;
@@ -253,13 +261,13 @@ export function useOnePercent() {
 
     const aiData = await fetchNextAITask(challenge);
 
-    if (aiData) {
+    if (aiData && aiData.nextTask) {
       setChallenges(prev => prev.map(c => {
         if (c.id !== id) return c;
         return {
           ...c,
-          nextTask: aiData.nextTask,
-          estimatedDays: aiData.estimatedDays,
+          nextTask: aiData.nextTask || c.nextTask,
+          estimatedDays: aiData.estimatedDays || c.estimatedDays,
           isRefreshing: false
         };
       }));
