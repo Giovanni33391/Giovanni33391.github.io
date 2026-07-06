@@ -13,7 +13,7 @@ interface StatsDashboardProps {
   };
 }
 
-export function StatsDashboard({ stats }: StatsDashboardProps) {
+export const StatsDashboard = React.memo(({ stats }: StatsDashboardProps) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-12">
       {/* Compound Growth Card */}
@@ -113,4 +113,6 @@ export function StatsDashboard({ stats }: StatsDashboardProps) {
       </motion.div>
     </div>
   );
-}
+});
+
+StatsDashboard.displayName = "StatsDashboard";

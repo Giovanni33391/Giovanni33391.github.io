@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Challenge } from '@/types';
 import { calculateCompoundedMetric } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
@@ -81,7 +81,19 @@ export function useOnePercent() {
 
   const [isLoaded, setIsLoaded] = useState(false);
   const [user, setUser] = useState<User | null>(null);
-  const [isSyncing, setIsSyncing] = useState(false);
+  const isSyncingRef = useRef(false);
+
+  // Use refs to stabilize callbacks
+  const challengesRef = useRef(challenges);
+  const userRef = useRef(user);
+
+  useEffect(() => {
+    challengesRef.current = challenges;
+  }, [challenges]);
+
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
   
   // Need to memoize supabase client inside useOnePercent to avoid dependency issues
   const [supabase] = useState(() => createClient());
@@ -110,8 +122,8 @@ export function useOnePercent() {
   }, []);
 
   const processPendingSync = useCallback(async (currentUser: User) => {
-    if (isSyncing) return;
-    setIsSyncing(true);
+    if (isSyncingRef.current) return;
+    isSyncingRef.current = true;
     try {
       const pendingStr = localStorage.getItem(PENDING_SYNC_KEY);
       if (!pendingStr) return;
@@ -168,9 +180,9 @@ export function useOnePercent() {
 
       localStorage.setItem(PENDING_SYNC_KEY, JSON.stringify(remainingActions));
     } finally {
-      setIsSyncing(false);
+      isSyncingRef.current = false;
     }
-  }, [isSyncing, supabase]);
+  }, [supabase]);
 
   // 3. Sync from Cloud if Authenticated
   useEffect(() => {
@@ -341,10 +353,11 @@ export function useOnePercent() {
     
     setChallenges(prev => [...prev, newChallenge]);
 
-    if (user) {
+    const currentUser = userRef.current;
+    if (currentUser) {
       const { data, error } = await supabase.from('challenges').insert({
         id: newChallenge.id,
-        user_id: user.id,
+        user_id: currentUser.id,
         name: newChallenge.name,
         type: newChallenge.type,
         initial_metric: newChallenge.initialMetric,
@@ -366,10 +379,10 @@ export function useOnePercent() {
         setChallenges(prev => prev.map(c => c.id === newChallenge.id ? { ...c, createdAt: data.created_at } : c));
       }
     }
-  }, [user, supabase, addPendingSync]);
+  }, [supabase, addPendingSync]);
 
   const completeChallenge = useCallback(async (id: string) => {
-    const challengeToUpdate = challenges.find(c => c.id === id);
+    const challengeToUpdate = challengesRef.current.find(c => c.id === id);
     if (!challengeToUpdate || isToday(challengeToUpdate.lastCompletedDate)) return;
 
     const newStreak = isYesterday(challengeToUpdate.lastCompletedDate) ? challengeToUpdate.streak + 1 : 1;
@@ -410,16 +423,17 @@ export function useOnePercent() {
       })
     );
 
+    const currentUser = userRef.current;
     const newLog: ChallengeLog = {
       challenge_id: id,
-      user_id: user?.id,
+      user_id: currentUser?.id,
       metric_achieved: nextMetric,
       completed_at: now
     };
 
     setLogs(prev => [newLog, ...prev]);
 
-    if (user) {
+    if (currentUser) {
       const updateData = {
         id,
         streak: newStreak,
@@ -446,18 +460,19 @@ export function useOnePercent() {
         await supabase.from('challenge_logs').insert(newLog);
       }
     }
-  }, [challenges, user, supabase, addPendingSync]);
+  }, [supabase, addPendingSync]);
 
   const deleteChallenge = useCallback(async (id: string) => {
     setChallenges(prev => prev.filter(c => c.id !== id));
 
-    if (user) {
+    const currentUser = userRef.current;
+    if (currentUser) {
       const { error } = await supabase.from('challenges').delete().eq('id', id);
       if (error) {
         addPendingSync({ type: 'DELETE', data: { id } });
       }
     }
-  }, [user, supabase, addPendingSync]);
+  }, [supabase, addPendingSync]);
 
   const stats = useMemo(() => {
     if (challenges.length === 0) return null;
