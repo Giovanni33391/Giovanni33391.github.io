@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Challenge } from '@/types';
-import { calculateCompoundedMetric } from '@/lib/utils';
+import { calculateCompoundedMetric, formatMetric } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
 
@@ -431,7 +431,7 @@ export function useOnePercent() {
         ));
 
         if (user) {
-          const updatePayload: any = {};
+          const updatePayload: { next_task?: string; estimated_days?: string } = {};
           if (nextTask) updatePayload.next_task = nextTask;
           if (estimatedDays !== undefined) updatePayload.estimated_days = estimatedDays?.toString();
 
@@ -575,7 +575,7 @@ export function useOnePercent() {
             );
 
             if (user) {
-              const updatePayload: any = {};
+              const updatePayload: { next_task?: string; estimated_days?: string } = {};
               if (nextTask) updatePayload.next_task = nextTask;
               if (estimatedDays !== undefined) updatePayload.estimated_days = estimatedDays?.toString();
 

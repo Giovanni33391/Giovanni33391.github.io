@@ -28,16 +28,23 @@ export function ChallengeCard({ challenge, onComplete, onDelete, onRefresh, isTo
   const completedToday = isToday(challenge.lastCompletedDate);
   const isQualitative = challenge.type === 'qualitative';
 
-  const daysToTarget = useMemo(() => {
-    // If we have an AI estimate, use it regardless of type (as requested: todo usuario registrado pueda usar...)
-    if (challenge.estimatedDays) return challenge.estimatedDays;
+  const daysToTargetLabel = useMemo(() => {
+    const val = challenge.estimatedDays;
+
+    // If we have an AI estimate, use it
+    if (val) {
+      if (val === "un año o más") return "un año o más";
+      const n = Number(val);
+      if (!isNaN(n)) return `${n} ${n === 1 ? 'día' : 'días'}`;
+      return val; // Fallback for any other string
+    }
 
     // Fallback for quantitative without AI estimate yet
     if (!isQualitative && challenge.targetMetric && challenge.targetMetric > challenge.currentMetric) {
       const days = Math.log(challenge.targetMetric / challenge.currentMetric) / Math.log(1.01);
       const roundedDays = Math.ceil(days);
       if (roundedDays > 365) return "un año o más";
-      return roundedDays;
+      return `${roundedDays} ${roundedDays === 1 ? 'día' : 'días'}`;
     }
 
     return null;
@@ -156,10 +163,10 @@ export function ChallengeCard({ challenge, onComplete, onDelete, onRefresh, isTo
             <p className="text-zinc-100 font-medium leading-relaxed">
               {challenge.nextTask || 'Preparando tu mejora del 1%...'}
             </p>
-            {daysToTarget && (
+            {daysToTargetLabel && (
               <div className="mt-3 flex items-center gap-1.5 text-[10px] font-bold text-purple-400 uppercase tracking-wider bg-purple-500/10 w-fit px-2 py-1 rounded-md border border-purple-500/20">
                 <Clock className="w-3 h-3" />
-                Meta: {challenge.targetGoal} — Faltan aprox. {daysToTarget} {daysToTarget === 1 || daysToTarget === '1' ? 'día' : (!isNaN(Number(daysToTarget)) || daysToTarget === 'un año o más' ? 'días' : '')}
+                Meta: {challenge.targetGoal} — Est. {daysToTargetLabel}
               </div>
             )}
           </div>
@@ -174,10 +181,10 @@ export function ChallengeCard({ challenge, onComplete, onDelete, onRefresh, isTo
                   </span>
                   <span className="text-zinc-500 font-medium">{challenge.unit}</span>
                 </div>
-                {daysToTarget && (
+                {daysToTargetLabel && (
                   <div className="mt-1.5 flex items-center gap-1.5 text-[10px] font-bold text-emerald-500 uppercase tracking-wider bg-emerald-500/10 w-fit px-2 py-0.5 rounded-md border border-emerald-500/20">
                     <Clock className="w-3 h-3" />
-                    Meta: {challenge.targetMetric} — Faltan {daysToTarget} {daysToTarget === 1 || daysToTarget === '1' ? 'día' : (!isNaN(Number(daysToTarget)) || daysToTarget === 'un año o más' ? 'días' : '')}
+                    Meta: {challenge.targetMetric} — Est. {daysToTargetLabel}
                   </div>
                 )}
               </div>

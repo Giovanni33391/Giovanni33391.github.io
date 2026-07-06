@@ -73,7 +73,7 @@ export async function POST(req: Request) {
 
     if (openai) {
       const response = await openai.chat.completions.create({
-        model: 'gpt-5.4-nano',
+        model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: 'Eres un experto en formación de hábitos y productividad minimalista.' },
           { role: 'user', content: prompt }
@@ -91,7 +91,7 @@ export async function POST(req: Request) {
     }
 
     try {
-      let data: any = {};
+      let data: { nextTask?: string; estimatedDays?: string | number | null } = {};
 
       try {
         data = JSON.parse(content);
@@ -111,7 +111,7 @@ export async function POST(req: Request) {
 
       // Mathematical fallback for estimatedDays
       if (!data.estimatedDays) {
-        if (isQuantitative && targetMetric && currentMetric && targetMetric > currentMetric) {
+        if (isQuantitative && targetMetric && currentMetric && currentMetric > 0 && targetMetric > currentMetric) {
           const days = Math.log(targetMetric / currentMetric) / Math.log(1.01);
           const roundedDays = Math.ceil(days);
           data.estimatedDays = roundedDays > 365 ? "un año o más" : roundedDays.toString();
