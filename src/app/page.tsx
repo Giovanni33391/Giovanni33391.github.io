@@ -147,32 +147,30 @@ export default function Home() {
       </motion.header>
 
       {/* Tab Switcher */}
-      {challenges.length > 0 && (
-        <div className="flex p-1 bg-zinc-900 border border-zinc-800 rounded-2xl mb-8 w-full max-w-sm mx-auto sm:mx-0">
-          <button
-            onClick={() => setActiveTab('habits')}
-            className={cn(
-              "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all",
-              activeTab === 'habits'
-                ? "bg-emerald-500 text-white shadow-lg"
-                : "text-zinc-400 hover:text-zinc-200"
-            )}
-          >
-            Mis Hábitos
-          </button>
-          <button
-            onClick={() => setActiveTab('stats')}
-            className={cn(
-              "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all",
-              activeTab === 'stats'
-                ? "bg-emerald-500 text-white shadow-lg"
-                : "text-zinc-400 hover:text-zinc-200"
-            )}
-          >
-            Estadísticas
-          </button>
-        </div>
-      )}
+      <div className="flex p-1 bg-zinc-900 border border-zinc-800 rounded-2xl mb-8 w-full max-w-sm mx-auto sm:mx-0">
+        <button
+          onClick={() => setActiveTab('habits')}
+          className={cn(
+            "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all",
+            activeTab === 'habits'
+              ? "bg-emerald-500 text-white shadow-lg"
+              : "text-zinc-400 hover:text-zinc-200"
+          )}
+        >
+          Mis Hábitos
+        </button>
+        <button
+          onClick={() => setActiveTab('stats')}
+          className={cn(
+            "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all",
+            activeTab === 'stats'
+              ? "bg-emerald-500 text-white shadow-lg"
+              : "text-zinc-400 hover:text-zinc-200"
+          )}
+        >
+          Estadísticas
+        </button>
+      </div>
 
       {/* Main Content */}
       {activeTab === 'stats' ? (
@@ -180,8 +178,14 @@ export default function Home() {
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
+            className="space-y-8"
           >
             <StatsDashboard stats={stats} />
+            {challenges.length === 0 && (
+              <div className="p-8 rounded-3xl bg-zinc-900/50 border border-zinc-800 border-dashed text-center">
+                <p className="text-zinc-500 font-medium">Añade tu primer desafío para empezar a generar estadísticas.</p>
+              </div>
+            )}
           </motion.div>
         )
       ) : (

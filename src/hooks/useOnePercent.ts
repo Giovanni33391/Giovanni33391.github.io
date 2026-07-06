@@ -438,7 +438,19 @@ export function useOnePercent() {
   }, [user, supabase, addPendingSync]);
 
   const stats = useMemo(() => {
-    if (challenges.length === 0) return null;
+    if (challenges.length === 0) {
+      return {
+        totalCompoundedGrowth: 0,
+        bestStreak: 0,
+        weeklyActivity: Array.from({ length: 7 }).map((_, i) => {
+          const d = new Date();
+          d.setDate(d.getDate() - (6 - i));
+          return { date: d.toISOString().split('T')[0], count: 0 };
+        }),
+        totalCompletions: 0,
+        masteryLevel: 0
+      };
+    }
     const totalCompoundedGrowth = challenges.reduce((acc, c) => {
       const growth = ((c.currentMetric - c.initialMetric) / c.initialMetric) * 100;
       return acc + (isNaN(growth) ? 0 : growth);
