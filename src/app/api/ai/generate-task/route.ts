@@ -73,7 +73,7 @@ export async function POST(req: Request) {
 
     if (openai) {
       const response = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'gpt-5.4-nano',
         messages: [
           { role: 'system', content: 'Eres un experto en formación de hábitos y productividad minimalista.' },
           { role: 'user', content: prompt }
