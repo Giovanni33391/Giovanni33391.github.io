@@ -15,6 +15,7 @@ export interface Challenge {
   startDate: string; // ISO string
   lastCompletedDate: string | null; // ISO string
   createdAt: string; // ISO string
+  isRefreshing?: boolean; // AI generation in progress
 }
 
 export interface DailyProgress {

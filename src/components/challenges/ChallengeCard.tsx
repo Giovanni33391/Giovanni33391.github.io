@@ -1,6 +1,6 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle2, Flame, TrendingUp, Trash2, Zap, Sparkles, Target } from 'lucide-react';
+import { CheckCircle2, Flame, TrendingUp, Trash2, Zap, Sparkles, Target, RotateCcw } from 'lucide-react';
 import { Area, AreaChart, ResponsiveContainer } from 'recharts';
 import confetti from 'canvas-confetti';
 import { Challenge } from '@/types';
@@ -11,40 +11,32 @@ interface ChallengeCardProps {
   challenge: Challenge;
   onComplete: (id: string) => void;
   onDelete: (id: string) => void;
+  onRefresh?: (id: string) => void;
   isToday: (date: string | null) => boolean;
 }
 
-export function ChallengeCard({ challenge, onComplete, onDelete, isToday }: ChallengeCardProps) {
-  const [mounted, setMounted] = useState(false);
+export const ChallengeCard = React.memo(({ challenge, onComplete, onDelete, onRefresh, isToday }: ChallengeCardProps) => {
   const [isCompleting, setIsCompleting] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setMounted(true), 0);
-    return () => clearTimeout(timer);
-  }, []);
 
   const completedToday = isToday(challenge.lastCompletedDate);
   const isQualitative = challenge.type === 'qualitative';
 
   const daysToTarget = useMemo(() => {
-    if (isQualitative) return challenge.estimatedDays;
+    if (challenge.estimatedDays) return challenge.estimatedDays;
     if (!challenge.targetMetric || challenge.targetMetric <= challenge.currentMetric) return null;
 
-    // Formula for compound growth: target = current * (1.01)^n
-    // n = log(target/current) / log(1.01)
     const days = Math.log(challenge.targetMetric / challenge.currentMetric) / Math.log(1.01);
     const roundedDays = Math.ceil(days);
 
     if (roundedDays > 365) return "un año o más";
     return roundedDays;
-  }, [challenge.currentMetric, challenge.targetMetric, challenge.estimatedDays, isQualitative]);
+  }, [challenge.currentMetric, challenge.targetMetric, challenge.estimatedDays]);
   
   const handleComplete = async () => {
     if (completedToday || isCompleting) return;
     
     setIsCompleting(true);
 
-    // Trigger confetti
     confetti({
       particleCount: 100,
       spread: 70,
@@ -59,7 +51,6 @@ export function ChallengeCard({ challenge, onComplete, onDelete, isToday }: Chal
     }
   };
 
-  // Generate mock chart data projecting 30 days of 1% growth
   const chartData = useMemo(() => {
     const data = [];
     const baseMetric = challenge.initialMetric;
@@ -72,7 +63,12 @@ export function ChallengeCard({ challenge, onComplete, onDelete, isToday }: Chal
     return data;
   }, [challenge.initialMetric]);
 
-  if (!mounted) return null;
+  const daysToTargetLabel = useMemo(() => {
+    if (!daysToTarget) return null;
+    if (daysToTarget === "un año o más") return daysToTarget;
+    const num = Number(daysToTarget);
+    return `faltan aprox. ${num} ${num === 1 ? 'día' : 'días'}`;
+  }, [daysToTarget]);
 
   return (
     <motion.div
@@ -114,44 +110,78 @@ export function ChallengeCard({ challenge, onComplete, onDelete, isToday }: Chal
           </Button>
         </div>
 
-        {isQualitative ? (
-          <div className="mb-8 p-4 rounded-xl bg-purple-500/10 border border-purple-500/20 relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-2 opacity-20">
-              <Sparkles className="w-8 h-8 text-purple-400" />
+        {/* AI Task Section - Now shown for both types */}
+        <div className={cn(
+          "mb-8 p-4 rounded-xl border relative overflow-hidden transition-all",
+          isQualitative
+            ? "bg-purple-500/10 border-purple-500/20"
+            : "bg-emerald-500/5 border-emerald-500/10"
+        )}>
+          <div className="absolute top-0 right-0 p-2 opacity-20 pointer-events-none">
+            <Sparkles className={cn("w-8 h-8", isQualitative ? "text-purple-400" : "text-emerald-400")} />
+          </div>
+
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <p className={cn(
+                "text-[10px] uppercase font-bold tracking-widest",
+                isQualitative ? "text-purple-400" : "text-emerald-400"
+              )}>
+                Próximo paso IA (1%)
+              </p>
+              {challenge.isRefreshing && (
+                <div className={cn(
+                  "w-1.5 h-1.5 rounded-full animate-pulse",
+                  isQualitative ? "bg-purple-400" : "bg-emerald-400"
+                )} />
+              )}
             </div>
-            <p className="text-[10px] uppercase font-bold text-purple-400 tracking-widest mb-2">Próximo paso IA (1%)</p>
-            <p className="text-zinc-100 font-medium leading-relaxed">
-              {challenge.nextTask || 'Generando tu próximo desafío...'}
-            </p>
-            {daysToTarget && (
-              <div className="mt-3 flex items-center gap-1.5 text-[10px] font-bold text-purple-400/80 uppercase tracking-wider">
-                <Sparkles className="w-3 h-3" />
-                Faltan aprox. {daysToTarget} {!isNaN(Number(daysToTarget)) ? 'días' : ''}
-              </div>
+            {onRefresh && (
+              <button
+                onClick={() => onRefresh(challenge.id)}
+                disabled={challenge.isRefreshing}
+                className={cn(
+                  "p-1 rounded-md transition-colors",
+                  isQualitative ? "hover:bg-purple-500/20 text-purple-400/50 hover:text-purple-400" : "hover:bg-emerald-500/20 text-emerald-400/50 hover:text-emerald-400",
+                  challenge.isRefreshing && "animate-spin opacity-50"
+                )}
+              >
+                <RotateCcw className="w-3 h-3" />
+              </button>
             )}
           </div>
-        ) : (
-          <div className="flex items-end justify-between mb-8">
+
+          <p className="text-zinc-100 font-medium leading-relaxed mb-3">
+            {challenge.nextTask || 'Generando tu próximo desafío...'}
+          </p>
+
+          {daysToTargetLabel && (
+            <div className={cn(
+              "flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider",
+              isQualitative ? "text-purple-400/80" : "text-emerald-500/80"
+            )}>
+              {isQualitative ? <Sparkles className="w-3 h-3" /> : <Target className="w-3 h-3" />}
+              {daysToTargetLabel}
+            </div>
+          )}
+        </div>
+
+        {!isQualitative && (
+          <div className="flex items-end justify-between mb-8 px-1">
             <div>
-              <p className="text-sm text-zinc-400 mb-1">Objetivo de hoy</p>
+              <p className="text-sm text-zinc-400 mb-1">Métrica objetivo</p>
               <div className="flex items-baseline gap-2">
                 <span className="text-4xl font-black text-zinc-100 tracking-tight">
                   {formatMetric(challenge.currentMetric)}
                 </span>
                 <span className="text-zinc-500 font-medium">{challenge.unit}</span>
               </div>
-              {daysToTarget && (
-                <div className="mt-1 flex items-center gap-1 text-[10px] font-bold text-emerald-500/80 uppercase tracking-wider">
-                  <Target className="w-3 h-3" />
-                  Meta: {challenge.targetMetric} — Faltan {daysToTarget} {!isNaN(Number(daysToTarget)) ? 'días' : ''}
-                </div>
-              )}
             </div>
           </div>
         )}
 
         <Button 
-          variant={completedToday ? "success" : (isQualitative ? "default" : "default")}
+          variant={completedToday ? "success" : "default"}
           size="lg" 
           className={cn(
             "w-full relative overflow-hidden",
@@ -199,4 +229,6 @@ export function ChallengeCard({ challenge, onComplete, onDelete, isToday }: Chal
       )}
     </motion.div>
   );
-}
+});
+
+ChallengeCard.displayName = 'ChallengeCard';
