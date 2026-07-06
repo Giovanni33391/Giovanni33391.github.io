@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle2, Flame, TrendingUp, Trash2, Zap, Sparkles, Target } from 'lucide-react';
 import { Area, AreaChart, ResponsiveContainer } from 'recharts';
@@ -14,14 +14,8 @@ interface ChallengeCardProps {
   isToday: (date: string | null) => boolean;
 }
 
-export function ChallengeCard({ challenge, onComplete, onDelete, isToday }: ChallengeCardProps) {
-  const [mounted, setMounted] = useState(false);
+export const ChallengeCard = React.memo(({ challenge, onComplete, onDelete, isToday }: ChallengeCardProps) => {
   const [isCompleting, setIsCompleting] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setMounted(true), 0);
-    return () => clearTimeout(timer);
-  }, []);
 
   const completedToday = isToday(challenge.lastCompletedDate);
   const isQualitative = challenge.type === 'qualitative';
@@ -71,8 +65,6 @@ export function ChallengeCard({ challenge, onComplete, onDelete, isToday }: Chal
     }
     return data;
   }, [challenge.initialMetric]);
-
-  if (!mounted) return null;
 
   return (
     <motion.div
@@ -199,4 +191,6 @@ export function ChallengeCard({ challenge, onComplete, onDelete, isToday }: Chal
       )}
     </motion.div>
   );
-}
+});
+
+ChallengeCard.displayName = "ChallengeCard";
