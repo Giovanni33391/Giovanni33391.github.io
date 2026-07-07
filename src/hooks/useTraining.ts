@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Routine, Exercise, ExerciseSet, WorkoutSession, TrainingMode } from '@/types';
+import { Routine, Exercise, ExerciseSet, WorkoutSession } from '@/types';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
 
@@ -56,7 +56,8 @@ export function useTraining() {
               exercises: cr.exercises,
               lastCompletedDate: cr.last_completed_date,
               streak: cr.streak,
-              createdAt: cr.created_at
+              createdAt: cr.created_at,
+              lastGlobalAssessment: cr.last_global_assessment
             };
             const local = localMap.get(cr.id);
             if (!local || (cr.last_completed_date && new Date(cr.last_completed_date).getTime() > (local.lastCompletedDate ? new Date(local.lastCompletedDate).getTime() : 0))) {
@@ -138,55 +139,35 @@ export function useTraining() {
         ...prev,
         exercises: prev.exercises.map(ex => {
           if (ex.id !== exerciseId) return ex;
-
           const setIndex = ex.sets.findIndex(s => s.id === setId);
           let newSets = ex.sets.map(s => s.id === setId ? { ...s, ...updates } : s);
 
-          // Auto-fill logic for the first set
           if (setIndex === 0 && (updates.weight !== undefined || updates.reps !== undefined)) {
+            // Intelligent prediction logic
             newSets = newSets.map((s, idx) => {
               if (idx > 0 && !s.completed) {
+                let predictedReps = updates.reps !== undefined ? updates.reps : s.reps;
+
+                // Specific mode behaviors
+                if (ex.mode === 'myoreps') {
+                   // Myo-reps: First set is activation (e.g. 15), clusters are small (e.g. 3-4)
+                   predictedReps = Math.ceil(predictedReps * 0.25); // roughly 25% of activation
+                }
+
                 return {
                   ...s,
                   weight: updates.weight !== undefined ? updates.weight : s.weight,
-                  reps: updates.reps !== undefined ? updates.reps : s.reps
+                  reps: predictedReps
                 };
               }
               return s;
             });
           }
-
           return { ...ex, sets: newSets };
         })
       };
     });
   }, []);
-
-  const fetchTrainingSuggestions = async (routine: Routine, history: WorkoutSession[]) => {
-    const updatedExercises = [...routine.exercises];
-    for (let i = 0; i < updatedExercises.length; i++) {
-      const ex = updatedExercises[i];
-      const exerciseHistory = history
-        .filter(s => s.routineId === routine.id)
-        .map(s => s.exercises.find(e => e.name === ex.name))
-        .filter(Boolean);
-
-      try {
-        const res = await fetch('/api/ai/training-suggestion', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ exercise: ex, sessionHistory: exerciseHistory, mode: ex.mode })
-        });
-        if (res.ok) {
-          const data = await res.json();
-          updatedExercises[i] = { ...ex, suggestion: data };
-        }
-      } catch (err) {
-        console.error('Failed to fetch suggestion for', ex.name, err);
-      }
-    }
-    return updatedExercises;
-  };
 
   const finishWorkout = useCallback(async (duration: number, selectedSuggestions: Record<string, 'weight' | 'reps' | null>) => {
     if (!activeRoutine) return;
@@ -208,17 +189,28 @@ export function useTraining() {
 
     setSessions(prev => [newSession, ...prev]);
 
+    // Fetch Global Assessment
+    let globalAssessment = "";
+    try {
+       const res = await fetch('/api/ai/training-suggestion', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({ isGlobal: true, routineName: activeRoutine.name, volume: totalVolume, duration, history: [newSession] })
+       });
+       if (res.ok) {
+         const data = await res.json();
+         globalAssessment = data.assessment;
+       }
+    } catch (e) { console.error(e); }
+
     const updatedRoutines = routines.map(r => {
       if (r.id !== activeRoutine.id) return r;
-
       const nextExercises = r.exercises.map(ex => {
         const choice = selectedSuggestions[ex.id];
         if (!choice || !ex.suggestion?.options) return ex;
-
         const nextVal = ex.suggestion.options[choice].value;
         const nextMetric = choice === 'weight' ? nextVal : ex.currentMetric;
         const nextReps = choice === 'reps' ? nextVal : ex.targetReps;
-
         return {
           ...ex,
           currentMetric: nextMetric,
@@ -232,23 +224,36 @@ export function useTraining() {
           }))
         };
       });
-
       const updated = {
         ...r,
         streak: r.streak + 1,
         lastCompletedDate: now,
         exercises: nextExercises,
+        lastGlobalAssessment: globalAssessment,
         isRefreshingAI: true
       };
 
-      // Fetch fresh suggestions for the NEXT session in background
-      fetchTrainingSuggestions(updated, [newSession, ...sessions]).then(suggestedExs => {
-        setRoutines(prev => prev.map(pr => pr.id === updated.id ? { ...pr, exercises: suggestedExs, isRefreshingAI: false } : pr));
-        if (user) {
-          supabase.from('routines').update({ exercises: suggestedExs }).eq('id', updated.id).then();
+      const fetchNew = async () => {
+        const suggested = [...updated.exercises];
+        for (let i = 0; i < suggested.length; i++) {
+           try {
+              const res = await fetch('/api/ai/training-suggestion', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ exercise: suggested[i], sessionHistory: [newSession], mode: suggested[i].mode })
+              });
+              if (res.ok) {
+                const data = await res.json();
+                suggested[i] = { ...suggested[i], suggestion: data };
+              }
+           } catch (e) {}
         }
-      });
-
+        setRoutines(prev => prev.map(pr => pr.id === updated.id ? { ...pr, exercises: suggested, isRefreshingAI: false } : pr));
+        if (user) {
+          supabase.from('routines').update({ exercises: suggested, last_global_assessment: globalAssessment }).eq('id', updated.id).then();
+        }
+      };
+      fetchNew();
       return updated;
     });
 
@@ -261,10 +266,10 @@ export function useTraining() {
         await supabase.from('routines').update({
           streak: routine.streak,
           last_completed_date: routine.lastCompletedDate,
-          exercises: routine.exercises
+          exercises: routine.exercises,
+          last_global_assessment: globalAssessment
         }).eq('id', routine.id);
       }
-
       await supabase.from('workout_sessions').insert({
         id: newSession.id,
         user_id: user.id,
@@ -276,7 +281,7 @@ export function useTraining() {
         exercises: newSession.exercises
       });
     }
-  }, [activeRoutine, routines, sessions, user, supabase]);
+  }, [activeRoutine, routines, user, supabase]);
 
   const applySuggestion = useCallback(async (routineId: string, exerciseId: string, choice: 'weight' | 'reps') => {
     setRoutines(prev => prev.map(r => {
@@ -286,25 +291,16 @@ export function useTraining() {
         const nextVal = ex.suggestion.options[choice].value;
         const nextMetric = choice === 'weight' ? nextVal : ex.currentMetric;
         const nextReps = choice === 'reps' ? nextVal : ex.targetReps;
-
         return {
           ...ex,
           currentMetric: nextMetric,
           targetReps: nextReps,
           suggestion: undefined,
-          sets: ex.sets.map(s => ({
-            ...s,
-            weight: nextMetric,
-            reps: nextReps,
-            completed: false
-          }))
+          sets: ex.sets.map(s => ({ ...s, weight: nextMetric, reps: nextReps, completed: false }))
         };
       });
-
       const updated = { ...r, exercises: updatedExercises };
-      if (user) {
-        supabase.from('routines').update({ exercises: updatedExercises }).eq('id', r.id).then();
-      }
+      if (user) supabase.from('routines').update({ exercises: updatedExercises }).eq('id', r.id).then();
       return updated;
     }));
   }, [user, supabase]);
@@ -312,13 +308,9 @@ export function useTraining() {
   const ignoreSuggestion = useCallback(async (routineId: string, exerciseId: string) => {
     setRoutines(prev => prev.map(r => {
       if (r.id !== routineId) return r;
-      const updatedExercises = r.exercises.map(ex =>
-        ex.id === exerciseId ? { ...ex, suggestion: undefined } : ex
-      );
+      const updatedExercises = r.exercises.map(ex => ex.id === exerciseId ? { ...ex, suggestion: undefined } : ex);
       const updated = { ...r, exercises: updatedExercises };
-      if (user) {
-        supabase.from('routines').update({ exercises: updatedExercises }).eq('id', r.id).then();
-      }
+      if (user) supabase.from('routines').update({ exercises: updatedExercises }).eq('id', r.id).then();
       return updated;
     }));
   }, [user, supabase]);

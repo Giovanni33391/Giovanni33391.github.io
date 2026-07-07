@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Dumbbell, Flame, Trash2, Play, ChevronRight, TrendingUp, Calendar, Zap, Check, X, Sparkles } from 'lucide-react';
+import { Dumbbell, Flame, Trash2, Play, ChevronRight, TrendingUp, Calendar, Zap, X, Sparkles, UserCircle } from 'lucide-react';
 import { Routine } from '@/types';
 import { Button } from '../ui/Button';
 import { cn } from '@/lib/utils';
@@ -27,7 +27,7 @@ export const RoutineCard = ({ routine, onStart, onDelete, onApplySuggestion, onI
       <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-[80px] -z-10" />
 
       <div className="p-8">
-        <div className="flex justify-between items-start mb-8">
+        <div className="flex justify-between items-start mb-6">
           <div onClick={() => setIsExpanded(!isExpanded)} className="cursor-pointer flex-1">
             <h3 className="text-3xl font-black text-white mb-2 group-hover:text-emerald-400 transition-colors tracking-tight">
               {routine.name}
@@ -52,6 +52,19 @@ export const RoutineCard = ({ routine, onStart, onDelete, onApplySuggestion, onI
             <Trash2 className="w-5 h-5" />
           </button>
         </div>
+
+        {/* Coach Assessment Badge */}
+        {routine.lastGlobalAssessment && (
+           <div className="mb-8 p-4 bg-zinc-950/50 border border-zinc-800/50 rounded-2xl flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+                 <UserCircle className="w-5 h-5 text-emerald-500" />
+              </div>
+              <div>
+                 <p className="text-[8px] font-black text-zinc-600 uppercase tracking-widest">Feedback del Coach</p>
+                 <p className="text-xs font-bold text-zinc-200">{routine.lastGlobalAssessment}</p>
+              </div>
+           </div>
+        )}
 
         {/* AI Suggestion Highlight */}
         <AnimatePresence>

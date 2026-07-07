@@ -72,6 +72,7 @@ export interface Routine {
   createdAt: string;
   history?: WorkoutSession[];
   isRefreshingAI?: boolean;
+  lastGlobalAssessment?: string;
 }
 
 export interface FinanceTransaction {

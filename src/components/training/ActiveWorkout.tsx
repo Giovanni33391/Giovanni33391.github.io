@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Save, X, Timer, Coffee, Zap, TrendingUp, BarChart3, Clock, Trophy } from 'lucide-react';
+import { CheckCircle2, Save, X, Timer, Coffee, Zap, TrendingUp, BarChart3, Clock, Trophy, UserCircle, ChevronRight } from 'lucide-react';
 import { Routine, ExerciseSet, TrainingMode } from '@/types';
 import { Button } from '../ui/Button';
 
@@ -81,63 +81,85 @@ export const ActiveWorkout = ({ routine, onUpdateSet, onFinish, onCancel }: Acti
 
   if (showSummary) {
     return (
-      <div className="fixed inset-0 z-[70] bg-zinc-950 flex flex-col p-6 overflow-y-auto no-scrollbar">
-        <div className="max-w-md mx-auto w-full space-y-8 pb-20">
+      <div className="fixed inset-0 z-[70] bg-zinc-950 flex flex-col p-6 overflow-y-auto no-scrollbar selection:bg-emerald-500/30">
+        <div className="max-w-md mx-auto w-full space-y-8 pb-32">
           <div className="text-center space-y-2 pt-8">
             <div className="w-20 h-20 bg-emerald-500/10 rounded-[2rem] flex items-center justify-center mx-auto mb-4 border border-emerald-500/20">
               <Trophy className="w-10 h-10 text-emerald-500" />
             </div>
-            <h2 className="text-4xl font-black text-white tracking-tight">¡Misión Cumplida!</h2>
-            <p className="text-zinc-500 font-medium">Resumen de tu evolución de hoy.</p>
+            <h2 className="text-4xl font-black text-white tracking-tight">Evolución Completada</h2>
+            <p className="text-zinc-500 font-medium">Analizando métricas de rendimiento...</p>
+          </div>
+
+          {/* AI Global Assessment */}
+          <div className="bg-zinc-900 border border-emerald-500/20 rounded-[2rem] p-6 relative overflow-hidden">
+             <div className="flex items-center gap-3 mb-4">
+                <UserCircle className="w-6 h-6 text-emerald-500" />
+                <span className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em]">Evaluación del Coach</span>
+             </div>
+             <p className="text-xl font-black text-white leading-tight italic">
+                &quot;{routine.lastGlobalAssessment || "Entrenamiento sólido. Mantén el foco en la técnica."}&quot;
+             </p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-zinc-900/50 border border-zinc-800 p-5 rounded-[2rem]">
+            <div className="bg-zinc-900/50 border border-zinc-800 p-5 rounded-[2.5rem]">
               <BarChart3 className="w-5 h-5 text-emerald-500 mb-2" />
-              <div className="text-2xl font-black text-white leading-none">{totalVolume.toLocaleString()}</div>
-              <div className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mt-1">Volumen Total (kg)</div>
+              <div className="text-3xl font-black text-white leading-none tracking-tighter">{totalVolume.toLocaleString()}</div>
+              <div className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mt-2">Volumen Total</div>
             </div>
-            <div className="bg-zinc-900/50 border border-zinc-800 p-5 rounded-[2rem]">
+            <div className="bg-zinc-900/50 border border-zinc-800 p-5 rounded-[2.5rem]">
               <Clock className="w-5 h-5 text-purple-500 mb-2" />
-              <div className="text-2xl font-black text-white leading-none">{formatTime(seconds)}</div>
-              <div className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mt-1">Tiempo Total</div>
+              <div className="text-3xl font-black text-white leading-none tracking-tighter">{formatTime(seconds)}</div>
+              <div className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mt-2">Tiempo</div>
             </div>
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-xs font-black text-zinc-500 uppercase tracking-[0.2em]">Próximo Entrenamiento</h3>
+            <h3 className="text-xs font-black text-zinc-500 uppercase tracking-[0.2em] pl-2">Planificación Próxima Sesión</h3>
             {routine.exercises.map((ex) => (
-              <div key={ex.id} className="bg-zinc-900 border border-zinc-800 rounded-[2rem] p-6 space-y-4">
+              <div key={ex.id} className="bg-zinc-900/50 border border-zinc-800 rounded-[2.5rem] p-6 space-y-5">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h4 className="font-black text-white">{ex.name}</h4>
-                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">IA Sugiere: {ex.suggestion?.reason || "Mantener ritmo"}</p>
+                    <h4 className="text-lg font-black text-white leading-tight mb-1">{ex.name}</h4>
+                    <div className="flex items-center gap-2">
+                       <Zap className="w-3 h-3 text-emerald-500 fill-emerald-500" />
+                       <p className="text-[10px] text-emerald-500/70 font-black uppercase tracking-widest">
+                          {ex.suggestion?.reason || "Mantener ritmo"}
+                       </p>
+                    </div>
                   </div>
-                  <Zap className="w-4 h-4 text-emerald-500 fill-emerald-500" />
+                  <div className="text-[10px] font-black text-zinc-700 uppercase tracking-widest bg-zinc-800 px-2 py-1 rounded-lg">
+                    {ex.mode}
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-3">
                   <button
                     onClick={() => setSelections(prev => ({ ...prev, [ex.id]: prev[ex.id] === 'weight' ? null : 'weight' }))}
-                    className={`p-4 rounded-2xl border text-left transition-all ${
+                    className={`p-4 rounded-3xl border text-left transition-all relative overflow-hidden group ${
                       selections[ex.id] === 'weight'
-                      ? "bg-emerald-500 border-emerald-400 text-zinc-950 shadow-lg shadow-emerald-500/20"
+                      ? "bg-emerald-500 border-emerald-400 text-zinc-950 shadow-xl shadow-emerald-500/20"
                       : "bg-zinc-950 border-zinc-800 text-zinc-500 hover:border-zinc-700"
                     }`}
                   >
-                    <div className="text-[10px] font-black uppercase tracking-widest mb-1 opacity-60">Subir Peso</div>
-                    <div className="text-xl font-black">{ex.suggestion?.options?.weight.label || `+1.25 ${ex.unit}`}</div>
+                    <div className="text-[8px] font-black uppercase tracking-[0.2em] mb-1 opacity-60">Objetivo Peso</div>
+                    <div className="text-2xl font-black tabular-nums">
+                       {ex.suggestion?.options?.weight.label || `+1.25${ex.unit}`}
+                    </div>
                   </button>
                   <button
                     onClick={() => setSelections(prev => ({ ...prev, [ex.id]: prev[ex.id] === 'reps' ? null : 'reps' }))}
-                    className={`p-4 rounded-2xl border text-left transition-all ${
+                    className={`p-4 rounded-3xl border text-left transition-all relative overflow-hidden group ${
                       selections[ex.id] === 'reps'
-                      ? "bg-emerald-500 border-emerald-400 text-zinc-950 shadow-lg shadow-emerald-500/20"
+                      ? "bg-emerald-500 border-emerald-400 text-zinc-950 shadow-xl shadow-emerald-500/20"
                       : "bg-zinc-950 border-zinc-800 text-zinc-500 hover:border-zinc-700"
                     }`}
                   >
-                    <div className="text-[10px] font-black uppercase tracking-widest mb-1 opacity-60">Subir Reps</div>
-                    <div className="text-xl font-black">{ex.suggestion?.options?.reps.label || "+1 rep"}</div>
+                    <div className="text-[8px] font-black uppercase tracking-[0.2em] mb-1 opacity-60">Objetivo Reps</div>
+                    <div className="text-2xl font-black tabular-nums">
+                       {ex.suggestion?.options?.reps.label || "+1 rep"}
+                    </div>
                   </button>
                 </div>
               </div>
@@ -145,12 +167,13 @@ export const ActiveWorkout = ({ routine, onUpdateSet, onFinish, onCancel }: Acti
           </div>
         </div>
 
-        <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-zinc-950 via-zinc-950 to-transparent">
+        <div className="fixed bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-zinc-950 via-zinc-950 to-transparent">
           <Button
-            className="w-full py-7 rounded-[2rem] font-black text-xl bg-emerald-500 text-zinc-950 shadow-2xl shadow-emerald-500/20"
+            className="w-full py-8 rounded-[2.5rem] font-black text-xl bg-emerald-500 text-zinc-950 shadow-2xl shadow-emerald-500/40 hover:bg-emerald-400 transition-all transform active:scale-95"
             onClick={() => onFinish(seconds, selections)}
           >
             GUARDAR Y EVOLUCIONAR
+            <ChevronRight className="w-6 h-6 ml-2 stroke-[3]" />
           </Button>
         </div>
       </div>
