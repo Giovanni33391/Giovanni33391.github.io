@@ -76,9 +76,9 @@ export default function Home() {
     }
   }
 
-  const handleCompleteChallenge = (id: string) => {
-    completeChallenge(id);
-    posthog.capture('habit_completed', { challenge_id: id });
+  const handleCompleteChallenge = (id: string, manualMetric?: number) => {
+    completeChallenge(id, manualMetric);
+    posthog.capture('habit_completed', { challenge_id: id, manual_metric: manualMetric });
   }
 
   const handleRefreshChallenge = (id: string) => {

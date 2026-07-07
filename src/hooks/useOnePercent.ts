@@ -18,7 +18,7 @@ export interface ChallengeLog {
 
 type PendingAction = 
   | { type: 'INSERT'; data: Challenge }
-  | { type: 'UPDATE'; data: { id: string; streak: number; currentMetric: number; lastCompletedDate: string; nextTask?: string; initialContext?: string, estimatedDays?: string | number | null } }
+  | { type: 'UPDATE'; data: { id: string; streak: number; currentMetric: number; initialMetric?: number; lastCompletedDate: string; nextTask?: string; initialContext?: string, estimatedDays?: string | number | null } }
   | { type: 'DELETE'; data: { id: string } };
 
 export const isToday = (dateString: string | null) => {
@@ -151,6 +151,7 @@ export function useOnePercent() {
            const { error } = await supabase.from('challenges').update({
              streak: action.data.streak,
              current_metric: action.data.currentMetric,
+             initial_metric: action.data.initialMetric,
              last_completed_date: action.data.lastCompletedDate,
              next_task: action.data.nextTask,
              estimated_days: action.data.estimatedDays?.toString(),
@@ -377,10 +378,6 @@ export function useOnePercent() {
     if (!challengeToUpdate || isToday(challengeToUpdate.lastCompletedDate)) return;
 
     const newStreak = isYesterday(challengeToUpdate.lastCompletedDate) ? challengeToUpdate.streak + 1 : 1;
-
-    // If manualMetric is provided, we use it as the new baseline for future increments
-    // We adjust initialMetric so that the compound logic works with the new value
-    // Formula: current = initial * (1.01 ^ streak) -> initial = current / (1.01 ^ streak)
     const nextMetric = manualMetric ?? calculateCompoundedMetric(challengeToUpdate.initialMetric, newStreak);
     let newInitialMetric = challengeToUpdate.initialMetric;
 
@@ -415,6 +412,7 @@ export function useOnePercent() {
         .update({
           streak: newStreak,
           current_metric: nextMetric,
+          initial_metric: newInitialMetric,
           last_completed_date: now,
           next_task: heuristicTask
         })
@@ -424,6 +422,7 @@ export function useOnePercent() {
           id,
           streak: newStreak,
           currentMetric: nextMetric,
+          initialMetric: newInitialMetric,
           lastCompletedDate: now,
           nextTask: heuristicTask
         }});
