@@ -145,6 +145,7 @@ export function useOnePercent() {
             target_goal: action.data.targetGoal,
             estimated_days: action.data.estimatedDays?.toString(),
             frequency: action.data.frequency,
+            start_time: action.data.startTime,
           });
           if (error) remainingActions.push(action);
         } else if (action.type === 'UPDATE') {
@@ -208,6 +209,7 @@ export function useOnePercent() {
               nextTask: dbChallenge.next_task || getHeuristicFallback(dbChallenge.name, dbChallenge.streak, dbChallenge.unit, dbChallenge.current_metric),
               initialContext: dbChallenge.initial_context,
               frequency: dbChallenge.frequency || [0, 1, 2, 3, 4, 5, 6],
+              startTime: dbChallenge.start_time,
               startDate: dbChallenge.created_at,
               lastCompletedDate: dbChallenge.last_completed_date,
               createdAt: dbChallenge.created_at,
@@ -315,11 +317,12 @@ export function useOnePercent() {
     name: string,
     initialMetric: number,
     unit: string,
-    type: 'quantitative' | 'qualitative' = 'quantitative',
+    type: 'quantitative' | 'qualitative' | 'static' = 'quantitative',
     frequency: number[] = [0, 1, 2, 3, 4, 5, 6],
     initialContext?: string,
     targetMetric?: number,
-    targetGoal?: string
+    targetGoal?: string,
+    startTime?: string
   ) => {
     const newChallenge: Challenge = {
       id: crypto.randomUUID(),
@@ -331,13 +334,14 @@ export function useOnePercent() {
       targetGoal,
       unit,
       streak: 0,
-      nextTask: getHeuristicFallback(name, 0, unit, initialMetric),
+      nextTask: type === 'static' ? 'Hábito estático mantenido' : getHeuristicFallback(name, 0, unit, initialMetric),
       initialContext,
       frequency,
+      startTime,
       startDate: new Date().toISOString(),
       lastCompletedDate: null,
       createdAt: new Date().toISOString(),
-      isRefreshing: true
+      isRefreshing: type !== 'static'
     };
     setChallenges(prev => [...prev, newChallenge]);
     if (user) {
@@ -356,19 +360,20 @@ export function useOnePercent() {
         target_metric: newChallenge.targetMetric,
         target_goal: newChallenge.targetGoal,
         frequency: newChallenge.frequency,
+        start_time: newChallenge.startTime
       }).select().single();
       if (error) {
         addPendingSync({ type: 'INSERT', data: newChallenge });
-        updateChallengeWithAI(newChallenge);
+        if (type !== 'static') updateChallengeWithAI(newChallenge);
       } else if (data) {
         const dbChallenge: Challenge = {
           ...newChallenge,
           createdAt: data.created_at
         };
         setChallenges(prev => prev.map(c => c.id === newChallenge.id ? dbChallenge : c));
-        updateChallengeWithAI(dbChallenge);
+        if (type !== 'static') updateChallengeWithAI(dbChallenge);
       }
-    } else {
+    } else if (type !== 'static') {
       updateChallengeWithAI(newChallenge);
     }
   }, [user, supabase, addPendingSync, updateChallengeWithAI]);
@@ -378,15 +383,15 @@ export function useOnePercent() {
     if (!challengeToUpdate || isToday(challengeToUpdate.lastCompletedDate)) return;
 
     const newStreak = isYesterday(challengeToUpdate.lastCompletedDate) ? challengeToUpdate.streak + 1 : 1;
-    const nextMetric = manualMetric ?? calculateCompoundedMetric(challengeToUpdate.initialMetric, newStreak);
+    const nextMetric = manualMetric ?? (challengeToUpdate.type === 'static' ? challengeToUpdate.currentMetric : calculateCompoundedMetric(challengeToUpdate.initialMetric, newStreak));
     let newInitialMetric = challengeToUpdate.initialMetric;
 
-    if (manualMetric !== undefined) {
+    if (manualMetric !== undefined && challengeToUpdate.type !== 'static') {
        newInitialMetric = manualMetric / Math.pow(1.01, newStreak);
     }
 
     const now = new Date().toISOString();
-    const heuristicTask = getHeuristicFallback(challengeToUpdate.name, newStreak, challengeToUpdate.unit, nextMetric);
+    const heuristicTask = challengeToUpdate.type === 'static' ? 'Hábito estático mantenido' : getHeuristicFallback(challengeToUpdate.name, newStreak, challengeToUpdate.unit, nextMetric);
 
     const updatedChallenge: Challenge = {
       ...challengeToUpdate,
@@ -395,7 +400,7 @@ export function useOnePercent() {
       currentMetric: nextMetric,
       lastCompletedDate: now,
       nextTask: heuristicTask,
-      isRefreshing: true
+      isRefreshing: challengeToUpdate.type !== 'static'
     };
     setChallenges(prev => prev.map(challenge => challenge.id === id ? updatedChallenge : challenge));
     const newLog: ChallengeLog = {
@@ -405,7 +410,7 @@ export function useOnePercent() {
       completed_at: now
     };
     setLogs(prev => [newLog, ...prev]);
-    updateChallengeWithAI(updatedChallenge);
+    if (challengeToUpdate.type !== 'static') updateChallengeWithAI(updatedChallenge);
     if (user) {
       const { error: updateError } = await supabase
         .from('challenges')
@@ -434,7 +439,7 @@ export function useOnePercent() {
 
   const refreshChallengeTask = useCallback((id: string) => {
     const challenge = challengesRef.current.find(c => c.id === id);
-    if (challenge) {
+    if (challenge && challenge.type !== 'static') {
       updateChallengeWithAI(challenge);
     }
   }, [updateChallengeWithAI]);
@@ -462,6 +467,7 @@ export function useOnePercent() {
       };
     }
     const totalCompoundedGrowth = challenges.reduce((acc, c) => {
+      if (c.type === 'static' || c.initialMetric === 0) return acc;
       const growth = ((c.currentMetric - c.initialMetric) / c.initialMetric) * 100;
       return acc + (isNaN(growth) ? 0 : growth);
     }, 0);

@@ -26,6 +26,7 @@ create table public.challenges (
   frequency integer[] default '{0,1,2,3,4,5,6}'::integer[] not null,
   initial_context text,
   next_task text,
+  start_time text,
   last_completed_date timestamp with time zone,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
@@ -47,6 +48,7 @@ create table public.routines (
   exercises jsonb not null,
   streak integer default 0 not null,
   last_completed_date timestamp with time zone,
+  last_global_assessment text,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 

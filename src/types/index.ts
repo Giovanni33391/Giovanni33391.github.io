@@ -1,7 +1,7 @@
 export interface Challenge {
   id: string;
   name: string;
-  type: 'quantitative' | 'qualitative';
+  type: 'quantitative' | 'qualitative' | 'static';
   initialMetric: number;
   currentMetric: number;
   targetMetric?: number; // Target for quantitative
@@ -12,6 +12,7 @@ export interface Challenge {
   nextTask?: string; // AI generated next step for qualitative habits
   initialContext?: string; // Initial state or base for qualitative habits
   frequency: number[]; // Days of the week (0-6, where 0 is Sunday)
+  startTime?: string; // HH:mm format
   startDate: string; // ISO string
   lastCompletedDate: string | null; // ISO string
   createdAt: string; // ISO string
