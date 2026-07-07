@@ -45,26 +45,26 @@ export async function POST(req: Request) {
     const currentSets = sessionHistory[0]?.exercises.find((e: { name: string }) => e.name === exercise.name)?.sets || [];
     const prompt = `
       Analiza el ejercicio "${exercise.name}" en modo "${mode}".
-      Objetivo: ${exercise.targetSets}x${exercise.targetReps} @ ${exercise.currentMetric}${exercise.unit}.
+      Objetivo: ${exercise.targetSets} series de ${exercise.targetReps} reps con ${exercise.currentMetric}${exercise.unit}.
       Resultados de hoy: ${JSON.stringify(currentSets)}
 
-      Genera dos opciones de evolución:
-      1. Incrementar peso (+1.25kg a +2.5kg o +2.5% a +5%).
-      2. Incrementar repeticiones (+1 a +2 reps).
+      Genera dos opciones de evolución para la PRÓXIMA sesión.
+      IMPORTANTE: El campo "value" debe ser el RESULTADO FINAL (Suma del actual + incremento).
+      Ejemplo: Si tiene 50kg y sugieres +2kg, el value es 52.
 
-      CRITERIOS:
-      - Si hizo todas las reps: Prioriza subir peso.
-      - Si falló en alguna serie: Prioriza subir reps o mantener peso.
+      Opciones:
+      1. Incrementar peso (+1kg a +2.5kg o +2.5% a +5%).
+      2. Incrementar repeticiones (+1 a +2 reps).
 
       RAZÓN: MÁXIMO 5 PALABRAS. Directo y seco.
 
       Responde JSON puro:
       {
         "options": {
-          "weight": { "value": número, "label": "+Xkg" },
-          "reps": { "value": número, "label": "+X reps" }
+          "weight": { "value": número_total_nuevo, "label": "+Xkg" },
+          "reps": { "value": número_total_nuevo, "label": "+X reps" }
         },
-        "reason": "texto corto"
+        "reason": "texto"
       }
     `;
 
