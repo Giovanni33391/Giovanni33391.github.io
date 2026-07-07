@@ -372,16 +372,29 @@ export function useOnePercent() {
     }
   }, [user, supabase, addPendingSync, updateChallengeWithAI]);
 
-  const completeChallenge = useCallback(async (id: string) => {
+  const completeChallenge = useCallback(async (id: string, manualMetric?: number) => {
     const challengeToUpdate = challengesRef.current.find(c => c.id === id);
     if (!challengeToUpdate || isToday(challengeToUpdate.lastCompletedDate)) return;
+
     const newStreak = isYesterday(challengeToUpdate.lastCompletedDate) ? challengeToUpdate.streak + 1 : 1;
-    const nextMetric = calculateCompoundedMetric(challengeToUpdate.initialMetric, newStreak);
+
+    // If manualMetric is provided, we use it as the new baseline for future increments
+    // We adjust initialMetric so that the compound logic works with the new value
+    // Formula: current = initial * (1.01 ^ streak) -> initial = current / (1.01 ^ streak)
+    const nextMetric = manualMetric ?? calculateCompoundedMetric(challengeToUpdate.initialMetric, newStreak);
+    let newInitialMetric = challengeToUpdate.initialMetric;
+
+    if (manualMetric !== undefined) {
+       newInitialMetric = manualMetric / Math.pow(1.01, newStreak);
+    }
+
     const now = new Date().toISOString();
     const heuristicTask = getHeuristicFallback(challengeToUpdate.name, newStreak, challengeToUpdate.unit, nextMetric);
+
     const updatedChallenge: Challenge = {
       ...challengeToUpdate,
       streak: newStreak,
+      initialMetric: newInitialMetric,
       currentMetric: nextMetric,
       lastCompletedDate: now,
       nextTask: heuristicTask,
