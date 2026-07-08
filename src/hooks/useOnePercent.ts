@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Challenge } from '@/types';
 import { calculateCompoundedMetric } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
@@ -79,9 +79,20 @@ export function useOnePercent() {
     }
   });
 
+  // Keep a ref of challenges for use in callbacks to avoid dependency cycles/frequent recreations
+  const challengesRef = useRef(challenges);
+  useEffect(() => {
+    challengesRef.current = challenges;
+  }, [challenges]);
+
   const [isLoaded, setIsLoaded] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+
   const [isSyncing, setIsSyncing] = useState(false);
+  const isSyncingRef = useRef(isSyncing);
+  useEffect(() => {
+    isSyncingRef.current = isSyncing;
+  }, [isSyncing]);
   
   // Need to memoize supabase client inside useOnePercent to avoid dependency issues
   const [supabase] = useState(() => createClient());
@@ -110,7 +121,7 @@ export function useOnePercent() {
   }, []);
 
   const processPendingSync = useCallback(async (currentUser: User) => {
-    if (isSyncing) return;
+    if (isSyncingRef.current) return;
     setIsSyncing(true);
     try {
       const pendingStr = localStorage.getItem(PENDING_SYNC_KEY);
@@ -170,7 +181,7 @@ export function useOnePercent() {
     } finally {
       setIsSyncing(false);
     }
-  }, [isSyncing, supabase]);
+  }, [supabase]);
 
   // 3. Sync from Cloud if Authenticated
   useEffect(() => {
@@ -269,22 +280,22 @@ export function useOnePercent() {
   };
 
   // Auth Methods
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = useCallback(async () => {
     await supabase.auth.signInWithOAuth({ provider: 'google' });
-  };
+  }, [supabase.auth]);
 
-  const signInWithEmail = async (email: string) => {
+  const signInWithEmail = useCallback(async (email: string) => {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: { emailRedirectTo: window.location.origin },
     });
     if (error) throw error;
-  };
+  }, [supabase.auth]);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     setUser(null);
-  };
+  }, [supabase.auth]);
 
   const getBetterFallback = (name: string, streak: number) => {
     const fallbacks = [
@@ -369,7 +380,7 @@ export function useOnePercent() {
   }, [user, supabase, addPendingSync]);
 
   const completeChallenge = useCallback(async (id: string) => {
-    const challengeToUpdate = challenges.find(c => c.id === id);
+    const challengeToUpdate = challengesRef.current.find(c => c.id === id);
     if (!challengeToUpdate || isToday(challengeToUpdate.lastCompletedDate)) return;
 
     const newStreak = isYesterday(challengeToUpdate.lastCompletedDate) ? challengeToUpdate.streak + 1 : 1;
@@ -446,7 +457,7 @@ export function useOnePercent() {
         await supabase.from('challenge_logs').insert(newLog);
       }
     }
-  }, [challenges, user, supabase, addPendingSync]);
+  }, [user, supabase, addPendingSync]);
 
   const deleteChallenge = useCallback(async (id: string) => {
     setChallenges(prev => prev.filter(c => c.id !== id));
