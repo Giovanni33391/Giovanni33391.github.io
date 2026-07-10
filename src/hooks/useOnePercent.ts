@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Challenge } from '@/types';
 import { calculateCompoundedMetric } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
@@ -85,6 +85,12 @@ export function useOnePercent() {
   
   // Need to memoize supabase client inside useOnePercent to avoid dependency issues
   const [supabase] = useState(() => createClient());
+
+  // Use a ref to keep track of the current challenges state for stable callbacks
+  const challengesRef = useRef<Challenge[]>(challenges);
+  useEffect(() => {
+    challengesRef.current = challenges;
+  }, [challenges]);
 
   useEffect(() => {
     // 2. Check Auth Status asynchronously
@@ -369,7 +375,7 @@ export function useOnePercent() {
   }, [user, supabase, addPendingSync]);
 
   const completeChallenge = useCallback(async (id: string) => {
-    const challengeToUpdate = challenges.find(c => c.id === id);
+    const challengeToUpdate = challengesRef.current.find(c => c.id === id);
     if (!challengeToUpdate || isToday(challengeToUpdate.lastCompletedDate)) return;
 
     const newStreak = isYesterday(challengeToUpdate.lastCompletedDate) ? challengeToUpdate.streak + 1 : 1;
@@ -446,7 +452,7 @@ export function useOnePercent() {
         await supabase.from('challenge_logs').insert(newLog);
       }
     }
-  }, [challenges, user, supabase, addPendingSync]);
+  }, [user, supabase, addPendingSync]);
 
   const deleteChallenge = useCallback(async (id: string) => {
     setChallenges(prev => prev.filter(c => c.id !== id));
