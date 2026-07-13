@@ -47,6 +47,33 @@ export const isYesterday = (dateString: string | null) => {
   );
 };
 
+// AI Task Generation Helper
+const fetchNextAITask = async (challengeName: string, streak: number, unit: string, lastTask?: string, initialContext?: string, targetGoal?: string) => {
+  try {
+    const response = await fetch('/api/ai/generate-task', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ challengeName, streak, unit, lastTask, initialContext, targetGoal }),
+    });
+    const data = await response.json();
+    return { nextTask: data.nextTask, estimatedDays: data.estimatedDays };
+  } catch (err) {
+    console.error('Failed to fetch AI task:', err);
+    return null;
+  }
+};
+
+const getBetterFallback = (name: string, streak: number) => {
+  const fallbacks = [
+    `Hoy enfócate en la técnica perfecta para ${name}, más que en la cantidad.`,
+    `Intenta realizar ${name} en un entorno diferente para refrescar tu mente.`,
+    `Dedica 2 minutos extra hoy a reflexionar sobre tu progreso con ${name}.`,
+    `Busca un micro-detalle en ${name} que puedas optimizar hoy.`,
+    `Prueba a hacer ${name} en un horario ligeramente distinto al de ayer.`
+  ];
+  return fallbacks[streak % fallbacks.length];
+};
+
 export function useOnePercent() {
   const [logs, setLogs] = useState<ChallengeLog[]>(() => {
     if (typeof window === 'undefined') return [];
@@ -252,50 +279,23 @@ export function useOnePercent() {
     }
   }, [challenges, logs, isLoaded]);
 
-  // AI Task Generation Helper
-  const fetchNextAITask = async (challengeName: string, streak: number, unit: string, lastTask?: string, initialContext?: string, targetGoal?: string) => {
-    try {
-      const response = await fetch('/api/ai/generate-task', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ challengeName, streak, unit, lastTask, initialContext, targetGoal }),
-      });
-      const data = await response.json();
-      return { nextTask: data.nextTask, estimatedDays: data.estimatedDays };
-    } catch (err) {
-      console.error('Failed to fetch AI task:', err);
-      return null;
-    }
-  };
-
   // Auth Methods
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = useCallback(async () => {
     await supabase.auth.signInWithOAuth({ provider: 'google' });
-  };
+  }, [supabase.auth]);
 
-  const signInWithEmail = async (email: string) => {
+  const signInWithEmail = useCallback(async (email: string) => {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: { emailRedirectTo: window.location.origin },
     });
     if (error) throw error;
-  };
+  }, [supabase.auth]);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     setUser(null);
-  };
-
-  const getBetterFallback = (name: string, streak: number) => {
-    const fallbacks = [
-      `Hoy enfócate en la técnica perfecta para ${name}, más que en la cantidad.`,
-      `Intenta realizar ${name} en un entorno diferente para refrescar tu mente.`,
-      `Dedica 2 minutos extra hoy a reflexionar sobre tu progreso con ${name}.`,
-      `Busca un micro-detalle en ${name} que puedas optimizar hoy.`,
-      `Prueba a hacer ${name} en un horario ligeramente distinto al de ayer.`
-    ];
-    return fallbacks[streak % fallbacks.length];
-  };
+  }, [supabase.auth]);
 
   // Actions
   const addChallenge = useCallback(async (
