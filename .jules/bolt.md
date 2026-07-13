@@ -1,0 +1,3 @@
+## 2025-07-13 - [Hoisting and Memoization for Root Hooks]
+**Learning:** Hoisting static helper functions (like AI fetchers) and constants outside of component/hook scopes prevents unnecessary recreation on every render. This is critical for hooks like `useOnePercent` that manage global-like state at the root, as any recreation of internal functions causes all downstream components to potentially re-render if they aren't properly memoized.
+**Action:** Always move static logic outside of React hooks and components. Combine this with `memo`, `useCallback`, and `useMemo` to maintain stable reference chains.
