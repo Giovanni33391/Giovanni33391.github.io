@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Target, Plus, LogIn, LogOut } from 'lucide-react';
 import { useOnePercent } from '@/hooks/useOnePercent';
@@ -15,6 +15,18 @@ import { ProModal } from '@/components/ui/ProModal';
 import { LandingPage } from '@/components/landing/LandingPage';
 import { AuthModal } from '@/components/auth/AuthModal';
 import posthog from 'posthog-js';
+
+const MAX_FREE_CHALLENGES = 3;
+
+const DAYS = [
+  { label: 'Dom', value: 0 },
+  { label: 'Lun', value: 1 },
+  { label: 'Mar', value: 2 },
+  { label: 'Mié', value: 3 },
+  { label: 'Jue', value: 4 },
+  { label: 'Vie', value: 5 },
+  { label: 'Sáb', value: 6 },
+];
 
 export default function Home() {
   const { 
@@ -34,21 +46,9 @@ export default function Home() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isGuestMode, setIsGuestMode] = useState(false);
   
-  const MAX_FREE_CHALLENGES = 3;
-
   const [selectedDay, setSelectedDay] = useState<number>(new Date().getDay());
 
-  const DAYS = [
-    { label: 'Dom', value: 0 },
-    { label: 'Lun', value: 1 },
-    { label: 'Mar', value: 2 },
-    { label: 'Mié', value: 3 },
-    { label: 'Jue', value: 4 },
-    { label: 'Vie', value: 5 },
-    { label: 'Sáb', value: 6 },
-  ];
-
-  const handleCreateChallenge = (
+  const handleCreateChallenge = useCallback((
     name: string,
     initialMetric: number,
     unit: string,
@@ -61,24 +61,25 @@ export default function Home() {
     addChallenge(name, initialMetric, unit, type, frequency, initialContext, targetMetric, targetGoal);
     posthog.capture('challenge_created', { name, unit, type, frequency, initialContext, targetMetric, targetGoal });
     setIsModalOpen(false);
-  };
+  }, [addChallenge]);
   
-  const handleOpenNewChallenge = () => {
+  const handleOpenNewChallenge = useCallback(() => {
     if (challenges.length >= MAX_FREE_CHALLENGES) {
       setIsProModalOpen(true);
     } else {
       setIsModalOpen(true);
     }
-  }
+  }, [challenges.length]);
 
-  const handleCompleteChallenge = (id: string) => {
+  const handleCompleteChallenge = useCallback((id: string) => {
     completeChallenge(id);
     posthog.capture('habit_completed', { challenge_id: id });
-  }
+  }, [completeChallenge]);
 
-  const filteredChallenges = challenges.filter(challenge =>
-    (challenge.frequency || [0, 1, 2, 3, 4, 5, 6]).includes(selectedDay)
-  );
+  const filteredChallenges = useMemo(() =>
+    challenges.filter(challenge =>
+      (challenge.frequency || [0, 1, 2, 3, 4, 5, 6]).includes(selectedDay)
+    ), [challenges, selectedDay]);
 
   // Prevent hydration mismatch by returning null until loaded
   if (!isLoaded) return null;
