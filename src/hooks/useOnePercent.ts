@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Challenge } from '@/types';
-import { calculateCompoundedMetric } from '@/lib/utils';
+import { calculateCompoundedMetric, isToday, isYesterday } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
 
@@ -22,30 +22,34 @@ type PendingAction =
   | { type: 'UPDATE'; data: { id: string; streak: number; currentMetric: number; lastCompletedDate: string; nextTask?: string; initialContext?: string, estimatedDays?: string | number | null } }
   | { type: 'DELETE'; data: { id: string } };
 
-// Helper to check if a date string is today
-export const isToday = (dateString: string | null) => {
-  if (!dateString) return false;
-  const date = new Date(dateString);
-  const today = new Date();
-  return (
-    date.getDate() === today.getDate() &&
-    date.getMonth() === today.getMonth() &&
-    date.getFullYear() === today.getFullYear()
-  );
+// AI Task Generation Helper - Hoisted for referential stability
+const fetchNextAITask = async (challengeName: string, streak: number, unit: string, lastTask?: string, initialContext?: string, targetGoal?: string) => {
+  try {
+    const response = await fetch('/api/ai/generate-task', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ challengeName, streak, unit, lastTask, initialContext, targetGoal }),
+    });
+    const data = await response.json();
+    return { nextTask: data.nextTask, estimatedDays: data.estimatedDays };
+  } catch (err) {
+    console.error('Failed to fetch AI task:', err);
+    return null;
+  }
 };
 
-// Helper to check if a date string was yesterday
-export const isYesterday = (dateString: string | null) => {
-  if (!dateString) return false;
-  const date = new Date(dateString);
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  return (
-    date.getDate() === yesterday.getDate() &&
-    date.getMonth() === yesterday.getMonth() &&
-    date.getFullYear() === yesterday.getFullYear()
-  );
+const getBetterFallback = (name: string, streak: number) => {
+  const fallbacks = [
+    `Hoy enfócate en la técnica perfecta para ${name}, más que en la cantidad.`,
+    `Intenta realizar ${name} en un entorno diferente para refrescar tu mente.`,
+    `Dedica 2 minutos extra hoy a reflexionar sobre tu progreso con ${name}.`,
+    `Busca un micro-detalle en ${name} que puedas optimizar hoy.`,
+    `Prueba a hacer ${name} en un horario ligeramente distinto al de ayer.`
+  ];
+  return fallbacks[streak % fallbacks.length];
 };
+
+export { isToday };
 
 export function useOnePercent() {
   const [logs, setLogs] = useState<ChallengeLog[]>(() => {
@@ -83,6 +87,12 @@ export function useOnePercent() {
   const [user, setUser] = useState<User | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   
+  // Keep a ref of challenges for stable callbacks that need to peek at the state
+  const challengesRef = useRef<Challenge[]>(challenges);
+  useEffect(() => {
+    challengesRef.current = challenges;
+  }, [challenges]);
+
   // Need to memoize supabase client inside useOnePercent to avoid dependency issues
   const [supabase] = useState(() => createClient());
 
@@ -252,50 +262,23 @@ export function useOnePercent() {
     }
   }, [challenges, logs, isLoaded]);
 
-  // AI Task Generation Helper
-  const fetchNextAITask = async (challengeName: string, streak: number, unit: string, lastTask?: string, initialContext?: string, targetGoal?: string) => {
-    try {
-      const response = await fetch('/api/ai/generate-task', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ challengeName, streak, unit, lastTask, initialContext, targetGoal }),
-      });
-      const data = await response.json();
-      return { nextTask: data.nextTask, estimatedDays: data.estimatedDays };
-    } catch (err) {
-      console.error('Failed to fetch AI task:', err);
-      return null;
-    }
-  };
-
   // Auth Methods
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = useCallback(async () => {
     await supabase.auth.signInWithOAuth({ provider: 'google' });
-  };
+  }, [supabase.auth]);
 
-  const signInWithEmail = async (email: string) => {
+  const signInWithEmail = useCallback(async (email: string) => {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: { emailRedirectTo: window.location.origin },
     });
     if (error) throw error;
-  };
+  }, [supabase.auth]);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     setUser(null);
-  };
-
-  const getBetterFallback = (name: string, streak: number) => {
-    const fallbacks = [
-      `Hoy enfócate en la técnica perfecta para ${name}, más que en la cantidad.`,
-      `Intenta realizar ${name} en un entorno diferente para refrescar tu mente.`,
-      `Dedica 2 minutos extra hoy a reflexionar sobre tu progreso con ${name}.`,
-      `Busca un micro-detalle en ${name} que puedas optimizar hoy.`,
-      `Prueba a hacer ${name} en un horario ligeramente distinto al de ayer.`
-    ];
-    return fallbacks[streak % fallbacks.length];
-  };
+  }, [supabase.auth]);
 
   // Actions
   const addChallenge = useCallback(async (
@@ -369,7 +352,8 @@ export function useOnePercent() {
   }, [user, supabase, addPendingSync]);
 
   const completeChallenge = useCallback(async (id: string) => {
-    const challengeToUpdate = challenges.find(c => c.id === id);
+    // Peek at current state without depending on 'challenges' array
+    const challengeToUpdate = challengesRef.current.find(c => c.id === id);
     if (!challengeToUpdate || isToday(challengeToUpdate.lastCompletedDate)) return;
 
     const newStreak = isYesterday(challengeToUpdate.lastCompletedDate) ? challengeToUpdate.streak + 1 : 1;
@@ -446,7 +430,7 @@ export function useOnePercent() {
         await supabase.from('challenge_logs').insert(newLog);
       }
     }
-  }, [challenges, user, supabase, addPendingSync]);
+  }, [user, supabase, addPendingSync]);
 
   const deleteChallenge = useCallback(async (id: string) => {
     setChallenges(prev => prev.filter(c => c.id !== id));
@@ -469,14 +453,19 @@ export function useOnePercent() {
 
     const bestStreak = Math.max(...challenges.map(c => c.streak), 0);
 
-    // Weekly activity (last 7 days)
+    // Weekly activity (last 7 days) - Optimized to O(N) using a hash map
     const now = new Date();
+    const logsByDate = logs.reduce((acc, log) => {
+      const dateKey = log.completed_at.split('T')[0];
+      acc[dateKey] = (acc[dateKey] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
     const weeklyActivity = Array.from({ length: 7 }).map((_, i) => {
       const d = new Date();
       d.setDate(now.getDate() - i);
       const dateStr = d.toISOString().split('T')[0];
-      const count = logs.filter(l => l.completed_at.startsWith(dateStr)).length;
-      return { date: dateStr, count };
+      return { date: dateStr, count: logsByDate[dateStr] || 0 };
     }).reverse();
 
     const totalCompletions = logs.length;
