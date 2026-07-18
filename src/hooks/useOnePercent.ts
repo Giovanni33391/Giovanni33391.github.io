@@ -469,15 +469,37 @@ export function useOnePercent() {
 
     const bestStreak = Math.max(...challenges.map(c => c.streak), 0);
 
-    // Weekly activity (last 7 days)
+    // Weekly activity (last 7 days) - Optimized to O(N) using a single-pass Map grouping
     const now = new Date();
-    const weeklyActivity = Array.from({ length: 7 }).map((_, i) => {
+
+    // Generate the last 7 day date strings in YYYY-MM-DD format
+    const dateStrings: string[] = [];
+    const dateCountMap = new Map<string, number>();
+
+    for (let i = 0; i < 7; i++) {
       const d = new Date();
       d.setDate(now.getDate() - i);
       const dateStr = d.toISOString().split('T')[0];
-      const count = logs.filter(l => l.completed_at.startsWith(dateStr)).length;
-      return { date: dateStr, count };
-    }).reverse();
+      dateStrings.push(dateStr);
+      dateCountMap.set(dateStr, 0);
+    }
+
+    // Single-pass over the logs array to populate counts for the target days
+    for (let i = 0; i < logs.length; i++) {
+      const log = logs[i];
+      if (log.completed_at) {
+        const logDate = log.completed_at.split('T')[0];
+        if (dateCountMap.has(logDate)) {
+          dateCountMap.set(logDate, (dateCountMap.get(logDate) || 0) + 1);
+        }
+      }
+    }
+
+    // Build the final array in ascending chronological order (oldest to newest)
+    const weeklyActivity = dateStrings.map(dateStr => ({
+      date: dateStr,
+      count: dateCountMap.get(dateStr) || 0
+    })).reverse();
 
     const totalCompletions = logs.length;
     const masteryLevel = Math.floor(Math.sqrt(totalCompletions * 10));
