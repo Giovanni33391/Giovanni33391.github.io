@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Target, Plus, LogIn, LogOut } from 'lucide-react';
 import { useOnePercent } from '@/hooks/useOnePercent';
-import { cn } from '@/lib/utils';
+import { cn, isToday } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { EmptyState } from '@/components/challenges/EmptyState';
@@ -16,6 +16,18 @@ import { LandingPage } from '@/components/landing/LandingPage';
 import { AuthModal } from '@/components/auth/AuthModal';
 import posthog from 'posthog-js';
 
+const MAX_FREE_CHALLENGES = 3;
+
+const DAYS = [
+  { label: 'Dom', value: 0 },
+  { label: 'Lun', value: 1 },
+  { label: 'Mar', value: 2 },
+  { label: 'Mié', value: 3 },
+  { label: 'Jue', value: 4 },
+  { label: 'Vie', value: 5 },
+  { label: 'Sáb', value: 6 },
+];
+
 export default function Home() {
   const { 
     challenges, 
@@ -25,30 +37,17 @@ export default function Home() {
     stats,
     addChallenge, 
     completeChallenge, 
-    deleteChallenge, 
-    isToday 
+    deleteChallenge
   } = useOnePercent();
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isProModalOpen, setIsProModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isGuestMode, setIsGuestMode] = useState(false);
-  
-  const MAX_FREE_CHALLENGES = 3;
 
   const [selectedDay, setSelectedDay] = useState<number>(new Date().getDay());
 
-  const DAYS = [
-    { label: 'Dom', value: 0 },
-    { label: 'Lun', value: 1 },
-    { label: 'Mar', value: 2 },
-    { label: 'Mié', value: 3 },
-    { label: 'Jue', value: 4 },
-    { label: 'Vie', value: 5 },
-    { label: 'Sáb', value: 6 },
-  ];
-
-  const handleCreateChallenge = (
+  const handleCreateChallenge = useCallback((
     name: string,
     initialMetric: number,
     unit: string,
@@ -61,24 +60,30 @@ export default function Home() {
     addChallenge(name, initialMetric, unit, type, frequency, initialContext, targetMetric, targetGoal);
     posthog.capture('challenge_created', { name, unit, type, frequency, initialContext, targetMetric, targetGoal });
     setIsModalOpen(false);
-  };
+  }, [addChallenge]);
   
-  const handleOpenNewChallenge = () => {
+  const handleOpenNewChallenge = useCallback(() => {
     if (challenges.length >= MAX_FREE_CHALLENGES) {
       setIsProModalOpen(true);
     } else {
       setIsModalOpen(true);
     }
-  }
+  }, [challenges.length]);
 
-  const handleCompleteChallenge = (id: string) => {
+  const handleCompleteChallenge = useCallback((id: string) => {
     completeChallenge(id);
     posthog.capture('habit_completed', { challenge_id: id });
-  }
+  }, [completeChallenge]);
 
-  const filteredChallenges = challenges.filter(challenge =>
-    (challenge.frequency || [0, 1, 2, 3, 4, 5, 6]).includes(selectedDay)
-  );
+  const handleDeleteChallenge = useCallback((id: string) => {
+    deleteChallenge(id);
+  }, [deleteChallenge]);
+
+  const filteredChallenges = useMemo(() => {
+    return challenges.filter(challenge =>
+      (challenge.frequency || [0, 1, 2, 3, 4, 5, 6]).includes(selectedDay)
+    );
+  }, [challenges, selectedDay]);
 
   // Prevent hydration mismatch by returning null until loaded
   if (!isLoaded) return null;
@@ -203,7 +208,7 @@ export default function Home() {
               <ChallengeCard 
                 challenge={challenge}
                 onComplete={handleCompleteChallenge}
-                onDelete={deleteChallenge}
+                onDelete={handleDeleteChallenge}
                 isToday={isToday}
               />
             </motion.div>

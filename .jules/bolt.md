@@ -1,0 +1,3 @@
+## 2026-07-19 - Optimizing OnePercent Rendering & Computation
+**Learning:** Hoisting static configurations, memoizing main views and children (using React.memo, useCallback, useMemo), and centralizing pure date comparisons/calculations drastically reduces downstream rendering overhead. Converting weekly logs iteration from O(7N) to an O(N) hash map groups logs in a single-pass, yielding direct performance improvement as N (number of logs) grows.
+**Action:** Always identify pure helpers that can be centralized, hoist constants outside the React component lifecycle, utilize single-pass O(N) groupings, and memoize custom list components.
