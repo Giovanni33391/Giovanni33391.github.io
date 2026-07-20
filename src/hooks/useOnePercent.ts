@@ -469,15 +469,32 @@ export function useOnePercent() {
 
     const bestStreak = Math.max(...challenges.map(c => c.streak), 0);
 
-    // Weekly activity (last 7 days)
+    // Weekly activity (last 7 days) - optimized to O(N) using single-pass hash map
     const now = new Date();
-    const weeklyActivity = Array.from({ length: 7 }).map((_, i) => {
+    const last7Days = Array.from({ length: 7 }).map((_, i) => {
       const d = new Date();
       d.setDate(now.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
-      const count = logs.filter(l => l.completed_at.startsWith(dateStr)).length;
-      return { date: dateStr, count };
-    }).reverse();
+      return d.toISOString().split('T')[0];
+    });
+
+    // Create a Set for O(1) lookup of target dates
+    const targetDates = new Set(last7Days);
+
+    // Single-pass O(N) grouping of logs by date to avoid O(7N) nested filtering
+    const logCounts: Record<string, number> = {};
+    for (const log of logs) {
+      if (log.completed_at) {
+        const dateStr = log.completed_at.split('T')[0];
+        if (targetDates.has(dateStr)) {
+          logCounts[dateStr] = (logCounts[dateStr] || 0) + 1;
+        }
+      }
+    }
+
+    const weeklyActivity = last7Days.map(dateStr => ({
+      date: dateStr,
+      count: logCounts[dateStr] || 0
+    })).reverse();
 
     const totalCompletions = logs.length;
     const masteryLevel = Math.floor(Math.sqrt(totalCompletions * 10));
