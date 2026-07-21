@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Challenge } from '@/types';
-import { calculateCompoundedMetric } from '@/lib/utils';
+import { calculateCompoundedMetric, isToday, isYesterday } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
 
@@ -22,30 +22,7 @@ type PendingAction =
   | { type: 'UPDATE'; data: { id: string; streak: number; currentMetric: number; lastCompletedDate: string; nextTask?: string; initialContext?: string, estimatedDays?: string | number | null } }
   | { type: 'DELETE'; data: { id: string } };
 
-// Helper to check if a date string is today
-export const isToday = (dateString: string | null) => {
-  if (!dateString) return false;
-  const date = new Date(dateString);
-  const today = new Date();
-  return (
-    date.getDate() === today.getDate() &&
-    date.getMonth() === today.getMonth() &&
-    date.getFullYear() === today.getFullYear()
-  );
-};
-
-// Helper to check if a date string was yesterday
-export const isYesterday = (dateString: string | null) => {
-  if (!dateString) return false;
-  const date = new Date(dateString);
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  return (
-    date.getDate() === yesterday.getDate() &&
-    date.getMonth() === yesterday.getMonth() &&
-    date.getFullYear() === yesterday.getFullYear()
-  );
-};
+export { isToday, isYesterday };
 
 export function useOnePercent() {
   const [logs, setLogs] = useState<ChallengeLog[]>(() => {
@@ -78,6 +55,11 @@ export function useOnePercent() {
       return [];
     }
   });
+
+  const challengesRef = useRef(challenges);
+  useEffect(() => {
+    challengesRef.current = challenges;
+  }, [challenges]);
 
   const [isLoaded, setIsLoaded] = useState(false);
   const [user, setUser] = useState<User | null>(null);
@@ -269,22 +251,22 @@ export function useOnePercent() {
   };
 
   // Auth Methods
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = useCallback(async () => {
     await supabase.auth.signInWithOAuth({ provider: 'google' });
-  };
+  }, [supabase]);
 
-  const signInWithEmail = async (email: string) => {
+  const signInWithEmail = useCallback(async (email: string) => {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: { emailRedirectTo: window.location.origin },
     });
     if (error) throw error;
-  };
+  }, [supabase]);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     setUser(null);
-  };
+  }, [supabase]);
 
   const getBetterFallback = (name: string, streak: number) => {
     const fallbacks = [
@@ -369,7 +351,7 @@ export function useOnePercent() {
   }, [user, supabase, addPendingSync]);
 
   const completeChallenge = useCallback(async (id: string) => {
-    const challengeToUpdate = challenges.find(c => c.id === id);
+    const challengeToUpdate = challengesRef.current.find(c => c.id === id);
     if (!challengeToUpdate || isToday(challengeToUpdate.lastCompletedDate)) return;
 
     const newStreak = isYesterday(challengeToUpdate.lastCompletedDate) ? challengeToUpdate.streak + 1 : 1;
@@ -446,7 +428,7 @@ export function useOnePercent() {
         await supabase.from('challenge_logs').insert(newLog);
       }
     }
-  }, [challenges, user, supabase, addPendingSync]);
+  }, [user, supabase, addPendingSync]);
 
   const deleteChallenge = useCallback(async (id: string) => {
     setChallenges(prev => prev.filter(c => c.id !== id));
@@ -469,13 +451,21 @@ export function useOnePercent() {
 
     const bestStreak = Math.max(...challenges.map(c => c.streak), 0);
 
-    // Weekly activity (last 7 days)
+    // Weekly activity (last 7 days) - Optimized to O(N) using a single-pass hash map
     const now = new Date();
+    const logsByDate = new Map<string, number>();
+    for (const log of logs) {
+      if (log.completed_at) {
+        const dateStr = log.completed_at.split('T')[0];
+        logsByDate.set(dateStr, (logsByDate.get(dateStr) || 0) + 1);
+      }
+    }
+
     const weeklyActivity = Array.from({ length: 7 }).map((_, i) => {
       const d = new Date();
       d.setDate(now.getDate() - i);
       const dateStr = d.toISOString().split('T')[0];
-      const count = logs.filter(l => l.completed_at.startsWith(dateStr)).length;
+      const count = logsByDate.get(dateStr) || 0;
       return { date: dateStr, count };
     }).reverse();
 
